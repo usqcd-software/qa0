@@ -11,20 +11,20 @@
 (define dbg-port (current-output-port))
 (define *verbose?* #f)
 (define (dbg . msg)
-  (display "D:" dbg-port)
-  (for-each (lambda (x) (display " " dbg-port) (write x dbg-port)) msg)
+  (q-display "D:" dbg-port)
+  (for-each (lambda (x) (q-display " " dbg-port) (q-write x dbg-port)) msg)
   (newline dbg-port)
   #f)
 (define (dbg-env msg env)
-  (display (format "E: ~a~%" msg) dbg-port)
+  (q-display (format "E: ~a~%" msg) dbg-port)
   (for-each (lambda (k&v)
-	      (display (format "  ~a: ~a~%" (car k&v) (cdr k&v)) dbg-port))
+	      (q-display (format "  ~a: ~a~%" (car k&v) (cdr k&v)) dbg-port))
 	    env))
 (define-syntax assert
   (lambda (x)
     (syntax-case x ()
       [(_ test fmt arg ...)
-       (syntax (if (not test) (error 'assert (string-append "FAILED: " fmt)
+       (syntax (if (not test) (ic-error 'assert (string-append "FAILED: " fmt)
 				     arg ...)))])))
 (define-syntax define-variant
   (lambda (x)
@@ -77,7 +77,7 @@
     (syntax-case x (else)
       [(_ exp clause ...) (not (identifier? (syntax exp)))
        (syntax (let ([var exp]) (_ var clause ...)))]
-      [(_ var) (syntax (error 'variant-case "no clause matches ~a" var))]
+      [(_ var) (syntax (ic-error 'variant-case "no clause matches ~a" var))]
       [(_ var (else exp exp1 ...)) (syntax (begin exp exp1 ...))]
       [(_ var (name [(fname field) ...] exp1 exp2 ...) clause ...)
        (with-syntax
@@ -102,10 +102,10 @@
 				       (let () e ...)))]
       [(_ (b0 b1 ...) e ...) (syntax (_ (b0) (_ (b1 ...) e ...)))])))
 
-(define-syntax cons*
+(define-syntax write-string
   (syntax-rules ()
-    [(_ a*) a*]
-    [(_ a b*) (cons a b*)]
-    [(_ a b c ...) (cons a (cons* b c ...))]))
+    [(_ s) (write-string s (current-output-port))]
+    [(_ s p) (display s p)]))
 
-(define (apply-printf fmt arg*) (apply printf fmt arg*))
+(define (display-fixnum x p) (display x p))
+(define (display-flonum x p) (display x p))

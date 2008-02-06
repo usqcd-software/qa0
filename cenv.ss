@@ -2,6 +2,7 @@
 ;;
 #fload "sfc.sf"
 #fload "common.sf"
+#fload "error.ss"
 #fload "basis.ss"
 #fload "ast.ss"
 ;;
@@ -35,12 +36,12 @@
   (syntax-rules ()
     [(_ env key msg arg ...)
      (ce-search env key (lambda (x) x)
-		(lambda () (error 'qa0 msg arg ...)))]))
+		(lambda () (ic-error 'ce-lookup msg arg ...)))]))
 (define-syntax ce-lookup-x
   (syntax-rules ()
     [(_ env type key msg arg ...)
      (ce-search env (list type key) (lambda (x) x)
-		(lambda () (error 'qa0 msg arg ...)))]))
+		(lambda () (ic-error 'ce-lookup-x msg arg ...)))]))
 (define (ce-bind env k v) (cons (cons k v) env))
 (define (ce-bind-x env t k v) (cons (cons (list t k) v) env))
 (define (ce-add-param env name value)
@@ -55,8 +56,8 @@
   (let* ([t (list 'type name)]
 	 [x (assoc t env)])
     (cond
-     [x (error 'qa0 "Rebinding ~a to ~a is not allowed, old binding ~a"
-	       name value (cdr x))]
+     [x (s-error "Rebinding ~a to ~a is not allowed, old binding ~a"
+		 name value (cdr x))]
      [else (let* ([env (ce-bind env t 'const)]
 		  [env (ce-bind-x env 'const name value)])
 	     env)])))
@@ -64,7 +65,7 @@
   (let* ([t (list 'type name)]
 	 [x (assoc t env)])
     (cond
-     [x (error 'qa0 "Redefining type ~a is not allowed" name)]
+     [x (s-error "Redefining type ~a is not allowed" name)]
      [else (let* ([env (ce-bind env t 'type)]
 		  [env (ce-bind-x env 'size-of name size)]
 		  [env (ce-bind-x env 'align-of name align)]
@@ -79,7 +80,7 @@
 	 [t (list 'type name)]
 	 [x (assoc t env)])
     (cond
-     [x (error 'qa0 "Redefining array ~a is not allowed" name)]
+     [x (s-error "Redefining array ~a is not allowed" name)]
      [else (let* ([env (ce-bind env t 'array)]
 		  [env (ce-bind-x env 'size-of name (* size bs))]
 		  [env (ce-bind-x env 'align-of name ba)]
@@ -91,7 +92,7 @@
   (let* ([t (list 'type name)]
 	 [x (assoc t env)])
     (cond
-     [x (error 'qa0 "Redefining structure ~a is not allowed" name)]
+     [x (s-error "Redefining structure ~a is not allowed" name)]
      [else (let loop ([env env] [f* field*] [t* type*]
 		      [size 0] [align 1])
 	     (cond
@@ -142,7 +143,7 @@
 		    (loop (cdr c)
 			  (ce-bind env (list 'offset-of new (car c))
 				   o)))])))]
-      [else (error 'qa0 "Internal error in ce-add-alias")])))
+      [else (s-error "Unexpected type for aliasing: ~a" t)])))
 (define (ce-add-macro env name value)
   (let* ([env (ce-bind-x env 'type name 'macro)]
 	 [env (ce-bind-x env 'macro name value)])

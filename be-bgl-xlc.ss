@@ -1,6 +1,8 @@
 ;; BG/L & BG/P XLC backend
 #fload "sfc.sf"
 #fload "common.sf"
+#fload "error.ss"
+#fload "format.ss"
 #fload "ast.ss"
 #fload "parser.ss"
 #fload "attr.ss"
@@ -139,21 +141,21 @@
 	dh-add-i
 	dh-sub-i))
     (define (emit-dh-double-store level addr* value env)
-      (do-emit level (format "__stfpd((double *)(~a), ~a);"
-			     (preemit-addr* addr* env)
-			     (preemit-input value env))))
+      (do-emit level (q-fmt "__stfpd((double *)(~a), ~a);"
+			    (preemit-addr* addr* env)
+			    (preemit-input value env))))
     (define (emit-dh-float-store level addr* value env)
-      (do-emit level (format "__stfps((float *)(~a), ~a);"
-			     (preemit-addr* addr* env)
-			     (preemit-input value env))))
+      (do-emit level (q-fmt "__stfps((float *)(~a), ~a);"
+			    (preemit-addr* addr* env)
+			    (preemit-input value env))))
     (define (emit-dh-double-load level output addr* env)
-      (do-emit level (format "~a = __lfpd((double *)(~a));"
-			     (preemit-output output env)
-			     (preemit-addr* addr* env))))
+      (do-emit level (q-fmt "~a = __lfpd((double *)(~a));"
+			    (preemit-output output env)
+			    (preemit-addr* addr* env))))
     (define (emit-dh-float-load level output addr* env)
-      (do-emit level (format "~a = __lfps((float *)(~a));"
-			     (preemit-output output env)
-			     (preemit-addr* addr* env))))
+      (do-emit level (q-fmt "~a = __lfps((float *)(~a));"
+			    (preemit-output output env)
+			    (preemit-addr* addr* env))))
     (define (emit-load level type output addr* env f)
       (case type
 	[(dh-float) (emit-dh-float-load level output addr* env)]
@@ -235,7 +237,7 @@
       (define (do-define id name def)
 	(ce-search-x env 'bgl/xlc id
 		     (lambda (v)
-		       (do-emit 0 "#define ~a ~a" name (format def v)))
+		       (do-emit 0 "#define ~a ~a" name (q-fmt def v)))
 		     (lambda () #t)))
        (do-define 'zero "gZERO" "(~a)")
        (do-define 'one "gONE" "(__cimag(~a))"))

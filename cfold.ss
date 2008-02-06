@@ -1,6 +1,7 @@
 ;; Constant folding
 #fload "sfc.sf"
 #fload "common.sf"
+#fload "error.ss"
 #fload "basis.ss"
 #fload "ast.ss"
 #fload "parser.ss"
@@ -25,28 +26,28 @@
 	    (case real
 	      [(double)
 	       (let* ([env (ce-bind env 'prec-letter  "d")]
-		      [env (ce-add-alias env 'REAL    'double)]
+		      [env (ce-add-alias env 'REAL 'double)]
 		      [env (ce-add-alias env 'COMPLEX 'complex-double)]
-		      [env (ce-add-alias env 'VECTOR  'vector-double)])
+		      [env (ce-add-alias env 'VECTOR 'vector-double)])
 		 env)]
 	      [(float)
 	       (let* ([env (ce-bind env 'prec-letter  "f")]
-		      [env (ce-add-alias env 'REAL    'float)]
+		      [env (ce-add-alias env 'REAL 'float)]
 		      [env (ce-add-alias env 'COMPLEX 'complex-float)]
-		      [env (ce-add-alias env 'VECTOR  'vector-float)])
+		      [env (ce-add-alias env 'VECTOR 'vector-float)])
 		 env)]
-	      [else (error 'fold-constant "Bad value of REAL: ~a" real)])]
+	      [else (ic-error "Bad value of REAL: ~a" real)])]
 	   [env (ce-add-const env '*mdwf-start-sum-dimension*
 			      mdwf-start-sum-dimension)]
 	   [env (ce-add-const env '*mdwf-start-sum-direction*
 			      mdwf-start-sum-direction)]
-	   [env (ce-add-qcd-type env 'Fermion "struct Fermion"
-				 '*colors* '*fermion-dim*)]
+	   [env (ce-add-qcd-type env 'Fermion
+				 "struct Fermion" '*colors* '*fermion-dim*)]
 	   [env (ce-add-qcd-type env 'Projected-Fermion
 				 "struct ProjectedFermion"
 				 '*colors* '*projected-fermion-dim*)]
-	   [env (ce-add-qcd-type env 'SU-n "struct SUn"
-				 '*colors* '*colors*)])
+	   [env (ce-add-qcd-type env 'SU-n
+				 "struct SUn" '*colors* '*colors*)])
       (let loop ([env env] [p* mdwf-basis])
 	(cond
 	 [(null? p*) env]
@@ -219,8 +220,8 @@
       (variant-case (ce-lookup-x env 'macro vv "Macro call of ~a (~a)" vv id)
 	[qa0-macro-def (arg* code*)
 	  (if (not (= (length arg*) (length p*)))
-	      (error 'qa0 "Macro call ~a expects ~a arguments"
-		     (cons* 'macro id p*) (length arg*)))
+	      (s-error "Macro call ~a expects ~a arguments"
+		       (list* 'macro id p*) (length arg*)))
 	  (let-values* ([(env v*) (ne-start* env arg* p* env '())]
 			[(env v*) (ne-mcode* env code* v*)])
 	    (let loop ([out* out*] [code* code*])
@@ -317,7 +318,7 @@
 	    [(macro) name]
 	    [(param) (ce-lookup-x env 'param name "Macro arg binding of ~a"
 				  name)]
-	    [else (error 'cf-param "ICE name ~a, type ~a" name t)]))]
+	    [else (ic-error 'cf-param "??? name ~a, type ~a" name t)]))]
       [else (cf-reparam (cf-eval-const input env))]))
   (define (cf-addr* addr* env)
     (cf-input* addr* env))
@@ -331,13 +332,13 @@
      [(number? c) (make-c-expr-number c)]
      [(string? c) (make-c-expr-string c)]
      [(symbol? c) (make-c-expr-quote c)]
-     [else (error 'qa0 "Unexpected computed constant is ~a" c)]))
+     [else (ic-error "Unexpected computed constant is ~a" c)]))
   (define (cf-reparam c)
     (cond
      [(number? c) c]
      [(string? c) c]
      [(symbol? c) c]
-     [else (error 'cf-reparam "ICE c=~a" c)]))
+     [else (ic-error 'cf-reparam "c=~a" c)]))
   (define (cf-type type env)
     (let ([type (cf-eval-param type env)])
       (ce-search-x env 'aliased-to type (lambda (x) x) (lambda () type))))
@@ -359,11 +360,11 @@
     (define (check-id-arg v)
       (variant-case v
 	[c-expr-id () #t]
-	[else (error 'qa0 "Expecting id, found ~a" v)]))
+	[else (s-error "Expecting id, found ~a" v)]))
     (define (check-id-arg* arg* len)
       (if (not (and (list? arg*)
 		    (= (length arg*) len)))
-	  (error 'qa0 "Expecting a list of ~a arguments, found ~a" len arg*)
+	  (s-error "Expecting a list of ~a arguments, found ~a" len arg*)
 	  (let loop ([arg* arg*])
 	    (cond
 	     [(null? arg*) #t]
@@ -385,12 +386,12 @@
     (define (compute-arith2 op)
       (let ([arg* (map (lambda (arg) (cf-eval-const arg env)) expr*)])
 	(if (not (= (length arg*) 2))
-	    (error 'qa0 "Expecting a list of 2, found ~a" arg*))
+	    (s-error "Expecting a list of 2, found ~a" arg*))
 	(map check-number-arg arg*)
 	(op (car arg*) (cadr arg*))))
     (define (check-number-arg arg)
       (if (not (number? arg))
-	  (error 'qa0 "A number is expected, found ~a" arg)))
+	  (s-error "A number is expected, found ~a" arg)))
     (define (compute-equal)
       (or (null? expr*)
 	  (let loop ([v (cf-eval-const (car expr*) env)] [arg* (cdr expr*)])
@@ -401,7 +402,7 @@
     (define (compute-shift)
       (cond
        [(not (= (length expr*) 2))
-	(error 'qa0 "Bad number of args for shift")]
+	(s-error "Bad number of args for shift")]
        [else (let ([v (cf-eval-const (car expr*) env)]
 		   [s (cf-eval-const (cadr expr*) env)])
 	       (check-number-arg v)
@@ -413,7 +414,7 @@
 		  [else (loop (quotient v 2) (+ s 1))])))]))
     (define (compute-not)
       (if (not (= (length expr*) 1))
-	  (error 'qa0 "Bad number of arguments for not"))
+	  (s-error "Bad number of arguments for not"))
       (if (zero? (cf-eval-const (car expr*) env)) 1 0))
     (define (compute-or)
       (let loop ([arg* expr*])
@@ -448,7 +449,7 @@
 	[(and) (compute-and)]
 	[(or) (compute-or)]
 	[(not) (compute-not)]
-	[else (error 'qa0 "Unexpected constant operation ~a (~a)" name v)])))
+	[else (s-error "Unexpected constant operation ~a (~a)" name v)])))
   (define (cf-eval-param* param* env)
     (map (lambda (p) (cf-eval-param p env)) param*))
   (define (cf-eval-param param env)

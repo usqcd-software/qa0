@@ -1,0 +1,2 @@
+#!/bin/sh -f
+grep '^#fload' $1 | sed -e 's/#fload "//' -e 's/"//' -e 's/^/'"$1"':  /'

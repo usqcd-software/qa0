@@ -1,14 +1,16 @@
 ;; S-expression parser
 #fload "sfc.sf"
-#fload "read.sf"
 #fload "common.sf"
+#fload "read.ss"
+#fload "error.ss"
 #fload "ast.ss"
 #fload "cenv.ss"
 ;;
-;; (provide parse-qa0-file)
 ;; (provide user-reg)
+;; (provide parse-qa0-file)
 ;;
 (define (user-reg name) (gen-reg "_" name))
+
 (define (parse-qa0-file file-name)
   ;; make sfc happy
   (define (exactly? a b) (= a b))
@@ -24,18 +26,16 @@
     (string-append (dir-name base) include-name))
   (define (check-list msg in cmp min-size)
     (if (not (list? in))
-	(error 'parse-qa0 "List expected in ~a, found~%  ~a~%"
-	       msg in))
+	(s-error "List expected in ~a, found~%  ~a~%"
+		 msg in))
     (if (not (cmp (length in) min-size))
-	(error 'parse-qa0
-	       "List of ~a ~a is expected in ~a, found:~%   ~a~%"
-	       (if (eq? cmp exactly?) "exactly" "at least")
-	       min-size msg in)))
+	(s-error "List of ~a ~a is expected in ~a, found:~%   ~a~%"
+		 (if (eq? cmp exactly?) "exactly" "at least")
+		 min-size msg in)))
   (define (check-name msg form name)
     (if (not (symbol? name))
-	(error 'parse-qa0
-	       "Expecting name for ~a, found ~a in:~%~a~%"
-	       msg name form)))
+	(s-error "Expecting name for ~a, found ~a in:~%~a~%"
+		 msg name form)))
   (define (check-sym-or-list-of-syms msg form name)
     (cond
      [(symbol? name) #t]
@@ -44,14 +44,12 @@
 			   [(null? name) #t]
 			   [(symbol? (car name)) (loop (cdr name))]
 			   [else #f]))) #t]
-     [else (error 'parse-qa0
-		  "Expecting name or list of names for ~a, found ~a in ~a~%"
-		  msg name form)]))
+     [else (s-error "Expecting name or list of names for ~a, found ~a in ~a~%"
+		    msg name form)]))
   (define (check-string msg form string)
     (if (not (string? string))
-	(error 'parse-qa0
-	       "Expecting string for ~a, found ~a in:~%~a~%"
-	       msg string form)))
+	(s-error "Expecting string for ~a, found ~a in:~%~a~%"
+		 msg string form)))
   (define (check-attrib* msg form attr*)
     (for-each (lambda (attr) (check-attrib msg form attr)) attr*))
   (define (check-attrib msg form attr)
@@ -59,14 +57,14 @@
 		 (and (list? attr)
 		      (>= (length attr) 1)
 		      (symbol? (car attr)))))
-	(error 'parse-qa0 "Expecting attribute for ~a, found ~a in~%~a~%"
-	       msg attr form)))
+	(s-error "Expecting attribute for ~a, found ~a in~%~a~%"
+		 msg attr form)))
   (define (check-output* msg form out*)
     (cond
      [(null? out*) #t]
      [(not (symbol? (car out*)))
-      (error 'parse-qa0 "Bad value for output of ~a, found ~a in~%~a~%"
-	     msg (car out*) form)]
+      (s-error "Bad value for output of ~a, found ~a in~%~a~%"
+	       msg (car out*) form)]
      [else (check-output* msg form (cdr out*))]))
   (define (check-input* msg form in*)
     (for-each (lambda (in) (check-input msg form in)) in*))
@@ -76,8 +74,8 @@
 	  [(reg) (not (symbol? (cadr in)))]
 	  [(const) #f]
 	  [else #t])
-	(error 'parse-qa0 "Bad value for input of ~a, found ~a in ~%~a~%"
-	       msg in form)))
+	(s-error "Bad value for input of ~a, found ~a in ~%~a~%"
+		 msg in form)))
   (define (check-macro-arg in)
     (check-list "Macro argument" in exactly? 2)
     (if (case (car in)
@@ -85,14 +83,14 @@
 	  [(const) #f]
 	  [(macro) #f]
 	  [else #t])
-	(error 'parse-qa0 "Bad value for macro argument ~a" in)))
+	(s-error "Bad value for macro argument ~a" in)))
   (define (check-iterator msg form iter)
     (check-list msg iter atleast? 2)
     (check-name msg form (car iter))
     (case (length iter)
       [(2) (check-list "iterator range" (cadr iter) atleast? 0)]
       [(3) #t]
-      [else (error 'parse-qa0 "Bad iterator form of ~a, found ~a in~%~a~%"
+      [else (s-error "Bad iterator form of ~a, found ~a in~%~a~%"
 		   msg iter form)]))
   (define (empty-ast) (make-qa0-top '()))
   (define (parse-top s-expr ast)
@@ -116,15 +114,15 @@
 	   (make-qa0-top (append decl* (list (parse-define s-expr))))]
 	  [(verbose)
 	   (make-qa0-top (append decl* (list (parse-verbose s-expr))))]
-	  [else (error 'parse-qa0 "Unknown form:~%~a~%" s-expr)])]))
+	  [else (s-error "Unknown form:~%~a~%" s-expr)])]))
   (define (parse-include s-expr)
     (check-list "include form" s-expr exactly? 2)
     (check-string "include file name" s-expr (cadr s-expr))
     (let ([f (open-input-file (make-include-path file-name (cadr s-expr)))])
-      (let loop ([r (read f)] [ast (empty-ast)])
+      (let loop ([r (q-read f)] [ast (empty-ast)])
 	(cond
 	 [(eof-object? r) (close-input-port f) (qa0-top->decl* ast)]
-	 [else (loop (read f) (parse-top r ast))]))))
+	 [else (loop (q-read f) (parse-top r ast))]))))
   (define (parse-verbose s-expr)
     (check-list "verbose form" s-expr atleast? 1)
     (map (lambda (x)
@@ -188,14 +186,15 @@
 					  (parse-const-expr (cadar bind*))
 					  (parse-const-expr (caddar bind*))
 					  (loop (cdr bind*)))]
-	      [else (error 'qa0 "Internal error in parse-repeat")]))]))]
+	      [else (s-error "Bad binding in parse-repeat: ~a"
+			     (car bind*))]))]))]
       [(procedure) (list (parse-procedure s-expr))]
-      [else (error 'qa0 "Bad form at top level~%~a~%" s-expr)]))
+      [else (s-error "Bad form at top level~%~a~%" s-expr)]))
   (define (parse-a-value expr)
     (if (or (number? expr)
 	    (symbol? expr)
 	    (string? expr)) expr
-	    (error 'parse-qa0 "a-value is not ~a~%" expr)))
+	    (s-error "a-value is not ~a~%" expr)))
   (define (parse-procedure s-expr)
     (check-list "procedure" s-expr atleast? 5)
     (check-name "procedure name" s-expr (cadr s-expr))
@@ -262,7 +261,7 @@
       [(if) (parse-if f)]
       [(if-else) (parse-if-else f)]
       [(macro) (parse-macro f)]
-      [else (error 'parse-qa0 "Unexpected code~%~a~%" f)]))
+      [else (s-error "Unexpected code~%~a~%" f)]))
   (define (parse-op f)
     (check-list "code op" f exactly? 5)
     (let ([name (cadr f)]
@@ -284,12 +283,12 @@
       [(reg) (parse-reg (cadr arg))]
       [(const) (parse-const-expr arg)]
       [(macro) (make-c-expr-macro (cadr arg))]
-      [else (error 'parse-qa0 "Internal error in parse-input")]))
+      [else (s-error "Unexpected macro argument ~a" arg)]))
   (define (parse-input in)
     (case (car in)
       [(reg) (parse-reg (cadr in))]
       [(const) (parse-const-expr in)]
-      [else (error 'parse-qa0 "Internal error in parse-input")]))
+      [else (s-error "Unexpected form of input ~a" in)]))
   (define (parse-reg name) (make-reg (user-reg name)))
   (define (parse-load f)
     (check-list "load" f exactly? 5)
@@ -371,8 +370,7 @@
 			      [lo (parse-const-expr (cadr i))]
 			      [hi (parse-const-expr (caddr i))])
 			  (cons (make-qa0-macro-range id lo hi c*) t*))]
-		   [else (error 'qa0
-				"Internal error in parse-foreach")]))]))))
+		   [else (s-error "Internal error in parse-foreach")]))]))))
   (define (parse-const-expr form)
     (check-list "constant expression" form exactly? 2)
     (parse-c-expr (cadr form)))
@@ -385,9 +383,9 @@
       (make-c-expr-quote (cadr form))]
      [(and (list? form) (>= (length form) 1) (symbol? (car form)))
       (make-c-expr-op (car form) (map parse-c-expr (cdr form)))]
-     [else (error 'parse-qa0 "constant expression is bad:~%~a~%" form)]))
+     [else (s-error "constant expression is bad:~%~a~%" form)]))
   (let ([f (open-input-file file-name)])
-    (let loop ([s-expr (read f)] [ast (empty-ast)])
+    (let loop ([s-expr (q-read f)] [ast (empty-ast)])
       (cond
        [(eof-object? s-expr) ast]
-       [else (loop (read f) (parse-top s-expr ast))]))))
+       [else (loop (q-read f) (parse-top s-expr ast))]))))

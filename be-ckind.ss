@@ -1,6 +1,9 @@
 ;; Backend prototype for C-like targets
 #fload "sfc.sf"
 #fload "common.sf"
+#fload "error.ss"
+#fload "print.ss"
+#fload "format.ss"
 #fload "ast.ss"
 #fload "parser.ss"
 #fload "attr.ss"
@@ -26,11 +29,12 @@
 	(set! *var-count* (+ *var-count* 1))
 	x))))
 (define (do-emit* level fmt arg*)
+  (define p (current-output-port))
   (let loop ([n level])
     (cond
      [(zero? n)]
-     [else (printf "  ") (loop (- n 1))]))
-  (apply-printf fmt arg*)
+     [else (q-print "  ") (loop (- n 1))]))
+  (q-fprint* p fmt arg*)
   (newline))
 (define-syntax do-emit
   (syntax-rules ()
@@ -48,10 +52,9 @@
   (let loop ([r (preemit-input (car addr*) env)] [addr* (cdr addr*)])
     (cond
      [(null? addr*) r]
-     [else (loop (format "~a + (~a)" r (preemit-input (car addr*) env))
+     [else (loop (q-fmt "~a + (~a)" r (preemit-input (car addr*) env))
 		 (cdr addr*))])))
-(define (preemit-param p)
-  (format "a_~a" p))
+(define (preemit-param p) (q-fmt "a_~a" p))
 (define (build-ckind-back-end target-name
 			      pointer-size
 			      pointer-align
@@ -115,21 +118,21 @@
 		  (chk-input! var env))
 		env))
   (define (emit-proc-decl cl? rt attr* name arg-c-name* arg-c-type* env)
-    (printf "~a~%" (build-proc-type name attr* env))
+    (q-print "~a~%" (build-proc-type name attr* env))
     (let* ([v (build-proc-name name attr* env)]
 	   [x (make-string (+ 1 (string-length v)) #\space)])
-      (printf "~a" v)
-      (if (null? arg-c-name*) (printf "(void)~%")
+      (q-print "~a" v)
+      (if (null? arg-c-name*) (q-print "(void)~%")
 	  (begin
-	    (printf "(")
+	    (q-print "(")
 	    (let loop ([name* arg-c-name*] [type* arg-c-type*] [p ""])
 	      (cond
 	       [(null? name*)]
-	       [else (printf "~a~a ~a~a" p (car type*)
-			     (preemit-param (car name*))
+	       [else (q-print "~a~a ~a~a" p (car type*)
+			      (preemit-param (car name*))
 			     (if (null? (cdr name*)) "" ",\n"))
 		     (loop (cdr name*) (cdr type*) x)]))
-	    (printf ")~%")))))
+	    (q-print ")~%")))))
   (define (emit-variables env)
     (ce-for-each env
 		 (lambda (k v) (and (list? k) (eq? (car k) 'back-end)))
@@ -153,8 +156,8 @@
     (if (and cf? (not (zero? f)))
 	(do-emit level "~a += ~a; /* count flops */" counter f)))
   (define (get-element r* f)
-    (if (char-numeric? f) (format "~a" (list-ref r* (- (char->integer f)
-						       (char->integer #\0))))
+    (if (char-numeric? f) (q-fmt "~a" (list-ref r* (- (char->integer f)
+						      (char->integer #\0))))
 	(string f)))
   (define (do-emit-op level name out* in* outx* inx* in-count fmt flops more)
     (let loop ([r ""] [f* (string->list fmt)])
@@ -176,7 +179,7 @@
 	     (let ([i-count (cadr op)] [fmt (caddr op)] [f-count (cadddr op)])
 	       (do-emit-op level name output* input* out* in* i-count fmt
 			   f f-count)))]
-       [else (error 'qa0-ckind "UNKNOWN op ~a, out* ~a, in* ~a, attr* ~a"
+       [else (ic-error 'qa0-ckind "UNKNOWN op ~a, out* ~a, in* ~a, attr* ~a"
 		    name output* input* attr*)])))
   (define (emit-if level var true-code* false-code* env cf? counter f)
     (emit-count level cf? counter f)
@@ -225,9 +228,8 @@
 	   [counter (ck-new-var)])
       (check-inputs! code* env)
       (if (and cf? rv)
-	  (error 'qa0-ckind
-		 "Both count-flops and return attributes in procedure ~a"
-		 name))
+	  (s-error "Both count-flops and return attributes in procedure ~a"
+		   name))
       (emit-proc-decl cf? rv attr* name arg-c-name* arg-c-type* env)
       (do-emit 0 "{")
       (if cf? (do-emit 1 "int ~a = 0;" counter))
@@ -240,7 +242,7 @@
       (extra-undef* env)
       (if cf? (do-emit 1 "return ~a;" counter))
       (if rv (if (< (length rv) 1)
-		 (error 'qa0-ckind "return without a name in ~a" name)
+		 (s-error "return without a name in ~a" name)
 		 (do-emit 1 "return ~a;"
 			  (preemit-output (make-reg (user-reg (car rv)))
 					  env))))

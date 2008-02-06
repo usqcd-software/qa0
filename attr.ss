@@ -1,6 +1,7 @@
 ;; Attribute handling
 #fload "sfc.sf"
 #fload "common.sf"
+#fload "error.ss"
 #fload "ast.ss"
 #fload "cenv.ss"
 ;;
@@ -18,5 +19,5 @@
   (syntax-rules ()
     [(_ attr* key msg arg ...)
      (attr-search attr* key (lambda (x) x)
-		  (lambda () (error 'qa0 msg arg ...)))]))
+		  (lambda () (ic-error 'attr-lookup msg arg ...)))]))
 

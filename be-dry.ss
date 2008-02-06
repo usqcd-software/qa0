@@ -1,6 +1,7 @@
 ;; Dry machine
 #fload "sfc.sf"
 #fload "common.sf"
+#fload "error.ss"
 #fload "ast.ss"
 #fload "parser.ss"
 #fload "attr.ss"
@@ -122,8 +123,8 @@
 		     [(pointer) "(void *)0"]
 		     [(float double)   "0.0"]
 		     [(complex-float complex-double) "0.0"]
-		     [else (error 'be-dry "emit-load type=~a, addr*=~a"
-				  type addr*)])])
+		     [else (s-error "emit-load type=~a, addr*=~a"
+				    type addr*)])])
 	(do-emit level "~a = ~a;"
 		 (preemit-output output env)
 		 value))

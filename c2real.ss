@@ -1,6 +1,7 @@
 ;; Complex to Real converter
 #fload "sfc.sf"
 #fload "common.sf"
+#fload "error.ss"
 #fload "ast.ss"
 #fload "cenv.ss"
 #fload "attr.ss"
@@ -76,7 +77,7 @@
 		    [off-im (list (make-c-expr-number m-s))]
 		    [(x-re env) (c2r-rename env value 'real)]
 		    [(x-im env) (c2r-rename env value 'imag)])
-	(values (cons* (make-qa0-store attr* r-type (append addr* off-im)
+	(values (list* (make-qa0-store attr* r-type (append addr* off-im)
 				       (make-reg x-im))
 		       (make-qa0-store attr* r-type addr*
 				       (make-reg x-re))
@@ -102,7 +103,7 @@
 		    [off-im (list (make-c-expr-number m-s))]
 		    [(x-re env) (c2r-rename env output 'real)]
 		    [(x-im env) (c2r-rename env output 'imag)])
-	(values (cons* (make-qa0-load attr* real-type (make-reg x-im)
+	(values (list* (make-qa0-load attr* real-type (make-reg x-im)
 				      (append addr* off-im))
 		       (make-qa0-load attr* real-type (make-reg x-re)
 				      addr*)
@@ -128,7 +129,7 @@
 		    [(a-im env) (c2r-rename env (car input*) 'imag)]
 		    [(b-re env) (c2r-rename env (car output*) 'real)]
 		    [(b-im env) (c2r-rename env (car output*) 'imag)])
-	(values (cons* (make-qa0-operation attr* 'double-move
+	(values (list* (make-qa0-operation attr* 'double-move
 					   (list (make-reg b-im))
 					   (list (make-reg a-im)))
 		       (make-qa0-operation attr* 'double-move
@@ -139,7 +140,7 @@
     (define (c2r-complex attr* output* input* r* env)
       (let-values* ([(b-re env) (c2r-rename env (car output*) 'real)]
 		    [(b-im env) (c2r-rename env (car output*) 'imag)])
-	(values (cons* (make-qa0-operation attr* 'double-move
+	(values (list* (make-qa0-operation attr* 'double-move
 					   (list (make-reg b-im))
 					   (list (cadr input*)))
 		       (make-qa0-operation attr* 'double-move
@@ -149,14 +150,14 @@
 		env)))
     (define (c2r-complex-real attr* output* input* r* env)
       (let-values* ([(a-re env) (c2r-rename env (car input*) 'real)])
-	(values (cons* (make-qa0-operation attr* 'double-move
+	(values (list* (make-qa0-operation attr* 'double-move
 					   output*
 					   (list (make-reg a-re)))
 		       r*)
 		env)))
     (define (c2r-complex-imag attr* output* input* r* env)
       (let-values* ([(a-im env) (c2r-rename env (car input*) 'imag)])
-	(values (cons* (make-qa0-operation attr* 'double-move
+	(values (list* (make-qa0-operation attr* 'double-move
 					   output*
 					   (list (make-reg a-im)))
 		       r*)
@@ -166,7 +167,7 @@
 		    [(a-im env) (c2r-rename env (car input*) 'imag)]
 		    [(b-re env) (c2r-rename env (car output*) 'real)]
 		    [(b-im env) (c2r-rename env (car output*) 'imag)])
-	(values (cons* (make-qa0-operation attr* 'double-neg
+	(values (list* (make-qa0-operation attr* 'double-neg
 					   (list (make-reg b-im))
 					   (list (make-reg a-im)))
 		       (make-qa0-operation attr* 'double-neg
@@ -181,7 +182,7 @@
 		    [(b-im env) (c2r-rename env (cadr input*) 'imag)]
 		    [(c-re env) (c2r-rename env (car output*) 'real)]
 		    [(c-im env) (c2r-rename env (car output*) 'imag)])
-	(values (cons* (make-qa0-operation attr* 'double-add
+	(values (list* (make-qa0-operation attr* 'double-add
 					   (list (make-reg c-im))
 					   (list (make-reg a-im)
 						 (make-reg b-im)))
@@ -198,7 +199,7 @@
 		    [(b-im env) (c2r-rename env (cadr input*) 'imag)]
 		    [(c-re env) (c2r-rename env (car output*) 'real)]
 		    [(c-im env) (c2r-rename env (car output*) 'imag)])
-	(values (cons* (make-qa0-operation attr* 'double-sub
+	(values (list* (make-qa0-operation attr* 'double-sub
 					   (list (make-reg c-im))
 					   (list (make-reg a-im)
 						 (make-reg b-im)))
@@ -214,7 +215,7 @@
 		    [(b-im env) (c2r-rename env (cadr input*) 'imag)]
 		    [(c-re env) (c2r-rename env (car output*) 'real)]
 		    [(c-im env) (c2r-rename env (car output*) 'imag)])
-	(values (cons* (make-qa0-operation attr* 'double-mul
+	(values (list* (make-qa0-operation attr* 'double-mul
 					   (list (make-reg c-im))
 					   (list a (make-reg b-im)))
 		       (make-qa0-operation attr* 'double-mul
@@ -230,7 +231,7 @@
 		    [(c-im env) (c2r-rename env (caddr input*) 'imag)]
 		    [(d-re env) (c2r-rename env (car output*) 'real)]
 		    [(d-im env) (c2r-rename env (car output*) 'imag)])
-	(values (cons* (make-qa0-operation attr* 'double-madd
+	(values (list* (make-qa0-operation attr* 'double-madd
 					   (list (make-reg d-re))
 					   (list (make-reg a-re) b
 						 (make-reg c-re)))
@@ -248,7 +249,7 @@
 		    [(c-im env) (c2r-rename env (caddr input*) 'imag)]
 		    [(d-re env) (c2r-rename env (car output*) 'real)]
 		    [(d-im env) (c2r-rename env (car output*) 'imag)])
-	(values (cons* (make-qa0-operation attr* 'double-msub
+	(values (list* (make-qa0-operation attr* 'double-msub
 					   (list (make-reg d-im))
 					   (list (make-reg a-im) b
 						 (make-reg c-im)))
@@ -259,13 +260,13 @@
 		       r*)
 		env)))
     (define (c2r-complex-norm-init attr* output* input* r* env)
-      (values (cons* (make-qa0-operation attr* 'double-zero output* '()) r*)
+      (values (list* (make-qa0-operation attr* 'double-zero output* '()) r*)
 	      env))
     (define (c2r-complex-norm-add attr* output* input* r* env)
       (let-values* ([a (car input*)]
 		    [(b-re env) (c2r-rename env (cadr input*) 'real)]
 		    [(b-im env) (c2r-rename env (cadr input*) 'imag)])
-	(values (cons* (make-qa0-operation attr* 'double-madd
+	(values (list* (make-qa0-operation attr* 'double-madd
 					   output*
 					   (list a (make-reg b-im)
 						 (make-reg b-im)))
@@ -276,7 +277,7 @@
 		       r*)
 		env)))
     (define (c2r-complex-norm-fini attr* output* input* r* env)
-      (values (cons* (make-qa0-operation attr* 'double-move output* input*) r*)
+      (values (list* (make-qa0-operation attr* 'double-move output* input*) r*)
 	      env))
     (define (c2r-complex-times-plus-i attr* output* input* r* env)
       (if (member (car output*) input*)
@@ -285,7 +286,7 @@
 			[(a-im env) (c2r-rename env (car output*) 'imag)]
 			[(b-re env) (c2r-rename env (car input*) 'real)]
 			[(b-im env) (c2r-rename env (car input*) 'imag)])
-	    (values (cons* (make-qa0-operation attr* 'double-move
+	    (values (list* (make-qa0-operation attr* 'double-move
 					      (list (make-reg a-im))
 					      (list (make-reg b-re)))
 			   (make-qa0-operation attr* 'double-neg
@@ -300,7 +301,7 @@
 			[(a-im env) (c2r-rename env (car output*) 'imag)]
 			[(b-re env) (c2r-rename env (car input*) 'real)]
 			[(b-im env) (c2r-rename env (car input*) 'imag)])
-	    (values (cons* (make-qa0-operation attr* 'double-move
+	    (values (list* (make-qa0-operation attr* 'double-move
 					       (list (make-reg a-re))
 					       (list (make-reg b-im)))
 			   (make-qa0-operation attr* 'double-neg
@@ -317,7 +318,7 @@
 			[(b-im env) (c2r-rename env (car input*) 'imag)]
 			[(c-re env) (c2r-rename env (cadr input*) 'real)]
 			[(c-im env) (c2r-rename env (cadr input*) 'imag)])
-	    (values (cons* (make-qa0-operation attr* 'double-madd
+	    (values (list* (make-qa0-operation attr* 'double-madd
 					       (list (make-reg a-im))
 					       (list (make-reg a-im)
 						     (make-reg b-im)
@@ -346,7 +347,7 @@
 			[(b-im env) (c2r-rename env (car input*) 'imag)]
 			[(c-re env) (c2r-rename env (cadr input*) 'real)]
 			[(c-im env) (c2r-rename env (cadr input*) 'imag)])
-	    (values (cons* (make-qa0-operation attr* 'double-msub
+	    (values (list* (make-qa0-operation attr* 'double-msub
 					       (list (make-reg a-im))
 					       (list (make-reg a-im)
 						     (make-reg b-im)
@@ -377,7 +378,7 @@
 			[(b-im env) (c2r-rename env (cadr input*) 'imag)]
 			[(c-re env) (c2r-rename env (caddr input*) 'real)]
 			[(c-im env) (c2r-rename env (caddr input*) 'imag)])
-	    (values (cons* (make-qa0-operation attr* 'double-madd
+	    (values (list* (make-qa0-operation attr* 'double-madd
 					       (list (make-reg a-im))
 					       (list (make-reg a-im)
 						     (make-reg b-im)
@@ -410,7 +411,7 @@
 			[(b-im env) (c2r-rename env (cadr input*) 'imag)]
 			[(c-re env) (c2r-rename env (caddr input*) 'real)]
 			[(c-im env) (c2r-rename env (caddr input*) 'imag)])
-	    (values (cons* (make-qa0-operation attr* 'double-msub
+	    (values (list* (make-qa0-operation attr* 'double-msub
 					       (list (make-reg a-im))
 					       (list (make-reg a-im)
 						     (make-reg b-im)
@@ -441,7 +442,7 @@
 			[(b-im env) (c2r-rename env (car input*) 'imag)]
 			[(c-re env) (c2r-rename env (cadr input*) 'real)]
 			[(c-im env) (c2r-rename env (cadr input*) 'imag)])
-	    (values (cons* (make-qa0-operation attr* 'double-add
+	    (values (list* (make-qa0-operation attr* 'double-add
 					       (list (make-reg a-im))
 					       (list (make-reg b-im)
 						     (make-reg c-re)))
@@ -460,7 +461,7 @@
 			[(b-im env) (c2r-rename env (car input*) 'imag)]
 			[(c-re env) (c2r-rename env (cadr input*) 'real)]
 			[(c-im env) (c2r-rename env (cadr input*) 'imag)])
-	    (values (cons* (make-qa0-operation attr* 'double-sub
+	    (values (list* (make-qa0-operation attr* 'double-sub
 					       (list (make-reg a-im))
 					       (list (make-reg b-im)
 						     (make-reg c-re)))
@@ -473,7 +474,7 @@
     (define (c2r-complex-dot-init attr* output* input* r* env)
       (let-values* ([(a-re env) (c2r-rename env (car output*) 'real)]
 		    [(a-im env) (c2r-rename env (car output*) 'imag)])
-      (values (cons* (make-qa0-operation attr* 'double-zero
+	(values (list* (make-qa0-operation attr* 'double-zero
 					 (list (make-reg a-im)) '())
 		     (make-qa0-operation attr* 'double-zero
 					 (list (make-reg a-re)) '())
@@ -486,7 +487,7 @@
 		    [(a-im env) (c2r-rename env (car output*) 'imag)]
 		    [(b-re env) (c2r-rename env (car input*) 'real)]
 		    [(b-im env) (c2r-rename env (car input*) 'imag)])
-      (values (cons* (make-qa0-operation attr* 'double-move
+      (values (list* (make-qa0-operation attr* 'double-move
 					 (list (make-reg a-im)) 
 					 (list (make-reg b-im)))
 		     (make-qa0-operation attr* 'double-move

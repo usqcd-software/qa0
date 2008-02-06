@@ -1,6 +1,8 @@
 ;; AST
 #fload "sfc.sf"
 #fload "common.sf"
+#fload "error.ss"
+#fload "format.ss"
 ;;
 ;; (provide gen-reg)
 ;; (provide walk-code*)
@@ -55,10 +57,10 @@
   (do-walk* code* arg))
 
 (define (gen-reg* prefix r*)
-  (let loop ([s (format "~a" prefix)] [r* r*])
+  (let loop ([s (q-fmt "~a" prefix)] [r* r*])
     (cond
      [(null? r*) (string->symbol s)]
-     [else (loop (format "~a~a" s (car r*)) (cdr r*))])))
+     [else (loop (q-fmt "~a~a" s (car r*)) (cdr r*))])))
   
 (define-syntax gen-reg
   (syntax-rules ()

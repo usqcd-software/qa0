@@ -1,4 +1,5 @@
-(case-sensitive #t)
+(define (fixnum? x) (and (number? x) (exact? x) (integer? x)))
+(define (flonum? x) (and (number? x) (inexact? x)))
 (load "common.ss")
 (load "print.ss")
 (load "error.ss")

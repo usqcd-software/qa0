@@ -1,5 +1,6 @@
 ;; Backend generator
 #fload "sfc.sf"
+#fload "error.ss"
 #fload "cenv.ss"
 ;;
 ;; (provide complex->back-end)

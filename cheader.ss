@@ -1,6 +1,9 @@
 ;; C header generation
 #fload "sfc.sf"
 #fload "common.sf"
+#fload "error.ss"
+#fload "print.ss"
+#fload "format.ss"
 #fload "ast.ss"
 #fload "cenv.ss"
 #fload "attr.ss"
@@ -22,32 +25,32 @@
       [qa0-verbose (target* data*) (emit-verbose 'c-header target* data*)]
       [else #f]))
   (define (gh-add-array name c-name base size)
-    (printf "typedef ~a ~a[~a];~%~%"
-	    (ce-lookup-x env 'name-of base
-			 "make-c-header: Internal error: no name for ~a" base)
-	    c-name (variant-case size
-		     [c-expr-number (number) number])))
+    (q-print "typedef ~a ~a[~a];~%~%"
+	     (ce-lookup-x env 'name-of base
+			  "make-c-header: Internal error: no name for ~a" base)
+	     c-name (variant-case size
+		      [c-expr-number (number) number])))
   (define (gh-add-struct name c-name field-type* field-c-name*)
-    (printf "struct ~a {~%" c-name)
+    (q-print "struct ~a {~%" c-name)
     (for-each (lambda (n t) 
-		(printf "  ~a ~a;~%" (ce-lookup-x env 'name-of n
-						  "Missing name for type ~a"
-						  n) t))
+		(q-print "  ~a ~a;~%" (ce-lookup-x env 'name-of n
+						   "Missing name for type ~a"
+						   n) t))
 	      field-type* field-c-name*)
-    (printf "};~%~%"))
+    (q-print "};~%~%"))
   (define (gh-add-proc attr* name arg-c-name* arg-c-type*)
-    (printf "~a ~a"
-	    (build-proc-type name attr* env)
-	    (build-proc-name name attr* env))
-    (if (null? arg-c-name*) (printf "(void);~%")
-	(begin (printf "(")
+    (q-print "~a ~a"
+	     (build-proc-type name attr* env)
+	     (build-proc-name name attr* env))
+    (if (null? arg-c-name*) (q-print "(void);~%")
+	(begin (q-print "(")
 	       (let loop ([name* arg-c-name*] [type* arg-c-type*])
 		 (cond
 		  [(null? name*)]
-		  [else (printf "~a~a ~a" (if (eq? name* arg-c-name*) "" ", ")
-				(car type*) (car name*))
+		  [else (q-print "~a~a ~a" (if (eq? name* arg-c-name*) "" ", ")
+				 (car type*) (car name*))
 			(loop (cdr name*) (cdr type*))]))
-	       (printf ");~%"))))
+	       (q-print ");~%"))))
   (variant-case ast
     [qa0-top (decl*) (let loop ([in* decl*])
 		       (cond
@@ -60,13 +63,12 @@
 	[r-type (attr-search attr* 'return
 			     (lambda (v*)
 			       (if (< (length v*) 3)
-				   (error 'proc-type: "short attribute ~a"
-					  v*)
+				   (s-error "short attribute ~a" v*)
 				   (caddr v*)))
 			     (lambda () #f))])
     (cond
      [(and f-count r-type)
-      (error 'proc-type "Both count-flops and return specified for ~a" name)]
+      (s-error "Both count-flops and return specified for ~a" name)]
      [f-count "unsigned int"]
      [r-type r-type]
      [else "void"])))
@@ -81,9 +83,9 @@
 	[has-df? (attr-search attr* 'prec&color
 			      (lambda (v*) #t) (lambda () #f))])
     (let loop ([r (if has-df?
-		      (format "~a_~a~a_~a_" prefix prec colors infix)
-		      (format "~a_~a_" prefix infix))]
+		      (q-fmt "~a_~a~a_~a_" prefix prec colors infix)
+		      (q-fmt "~a_~a_" prefix infix))]
 	       [stem* stem*])
       (cond
-       [(null? stem*) (format "~a~a" r suffix)]
-       [else (loop (format "~a~a" r (car stem*)) (cdr stem*))]))))
+       [(null? stem*) (q-fmt "~a~a" r suffix)]
+       [else (loop (q-fmt "~a~a" r (car stem*)) (cdr stem*))]))))

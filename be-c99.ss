@@ -1,6 +1,7 @@
 ;; C99 32bit backend
 #fload "sfc.sf"
 #fload "common.sf"
+#fload "error.ss"
 #fload "ast.ss"
 #fload "parser.ss"
 #fload "attr.ss"

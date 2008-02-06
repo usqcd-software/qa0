@@ -9,25 +9,12 @@
 ;; (provide-macro variant-case)    ;; require syntax-case
 ;; (provide-macro let-values*)
 ;;
-;(define dbg-port (current-output-port))
-;(define *verbose?* #f)
-;(define (dbg . msg)
-;  (display "D:" dbg-port)
-;  (for-each (lambda (x) (display " " dbg-port) (write x dbg-port)) msg)
-;  (newline dbg-port)
-;  #f)
-;(define (dbg-env msg env)
-;  (display (format "E: ~a~%" msg) dbg-port)
-;  (for-each (lambda (k&v)
-;	      (display (format "  ~a: ~a~%" (car k&v) (cdr k&v)) dbg-port))
-;	    env))
-; variants
 
 (define-syntax variant-case
   (syntax-rules (else)
     [(_ (a . d) clause ...)
      (let ([var (a . d)]) (variant-case var clause ...))]
-    [(_ var) (error 'variant-case "no clause matches ~s" var)]
+    [(_ var) (ic-error 'variant-case "no clause matches ~s" var)]
     [(_ var (else exp1 exp2 ...)) (begin exp1 exp2 ...)]
     [(_ var (name (field ...) exp1 exp2 ...) clause ...)
      (if (#&(string->id #&(string-append #&(id->string name) "?")) var)
@@ -78,38 +65,3 @@
      (let ([n (let () i ...)]) e ...)]
     [(_ (b0 b1 ...) e ...)
      (let-values* (b0) (let-values* (b1 ...) e ...))]))
-
-(define-syntax cons*
-  (syntax-rules ()
-    [(_ a*) a*]
-    [(_ a b*) (cons a b*)]
-    [(_ a b c ...) (cons a (cons* b c ...))]))
-
-(define (apply-printf fmt arg*) (fprintf* (current-output-port) fmt arg*))
-
-(define (format* fmt arg*)
-  (define (format/1 obj r*)
-    (cond
-     [(boolean? obj) (append (list (if obj #\t #\f) #\#) r*)]
-     [(char? obj) (cons obj r*)]
-     [(number? obj) (append (reverse (string->list (number->string obj))) r*)]
-     [(symbol? obj) (append (reverse (string->list (symbol->string obj))) r*)]
-     [(string? obj) (append (reverse (string->list obj)) r*)]
-     [else (append (string->list "XXX") r*)]))
-  (let loop ([flst (string->list fmt)] [arg* arg*] [r* '()])
-    (cond
-     [(null? flst) (list->string (reverse r*))]
-     [(char=? (car flst) #\~)
-      (and (pair? (cdr flst))
-	   (let ([c (cadr flst)])
-	     (cond
-	      [(char=? c #\a) (loop (cddr flst) (cdr arg*)
-				    (format/1 (car arg*) r*))]
-	      [(char=? c #\~) (loop (cddr flst) arg* (cons #\~ r*))]
-	      [(char=? c #\%) (loop (cddr flst) arg* (cons #\newline r*))]
-	      [else #f])))]
-     [else (loop (cdr flst) arg* (cons (car flst) r*))])))
-
-(define-syntax format
-  (syntax-rules ()
-    [(_ fmt arg ...) (format* fmt (list arg ...))]))

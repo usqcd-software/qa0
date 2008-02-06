@@ -1,6 +1,7 @@
 ;; QCD to complex converter
 #fload "sfc.sf"
 #fload "common.sf"
+#fload "error.ss"
 #fload "ast.ss"
 #fload "cenv.ss"
 #fload "attr.ss"
@@ -303,7 +304,7 @@
 	     [c   (car input*)] [f (cadr input*)] [r (car output*)]
 	     [r0  (make-reg (new-reg))] [m0 (* d-n f-n)]
 	     [r1  (make-reg (new-reg))] [m1 d-n])
-	(values (cons* (make-qa0-operation '() 'int-add output* (list r0 r1))
+	(values (list* (make-qa0-operation '() 'int-add output* (list r0 r1))
 		       (make-qa0-operation '() 'int-mul (list r1)
 					   (list f (make-c-expr-number m1)))
 		       (make-qa0-operation '() 'int-mul (list r0)
@@ -569,7 +570,7 @@
 		 r* env))
     (define (q2c-check-list x* size msg)
       (if (not (= (length x*) size))
-	  (error 'qcd->complex "ERROR: ~a" msg)))
+	  (s-error "ERROR: ~a" msg)))
     (define (q2c-rename env base type i-a i-b)
       (let ([key (list 'qcd->complex base type i-a i-b)])
 	(ce-search env key
@@ -611,8 +612,8 @@
 	       [(minus-one) 'complex-sub]
 	       [(plus-i) 'complex-add-i]
 	       [(minus-i) 'complex-sub-i]
-	       [else (error 'qa0 "Unknown second factor (~a ~a)" op-0 op-1)])]
-	    [else (error 'qa0 "Unknown first factor (~a ~a)" op-0 op-1)]))
+	       [else (s-error "Unknown second factor (~a ~a)" op-0 op-1)])]
+	    [else (s-error "Unknown first factor (~a ~a)" op-0 op-1)]))
 	(let c-loop ([c 0] [r* r*] [env env])
 	  (cond
 	   [(= c c-n) (values r* env)]
@@ -648,7 +649,7 @@
 	    [(minus-one)  'complex-neg]
 	    [(plus-i)     'complex-times-plus-i]
 	    [(minus-i)    'complex-times-minus-i]
-	    [else (error 'qa0 "Unknown unproject operation ~a" name)]))
+	    [else (s-error "Unknown unproject operation ~a" name)]))
 	(let c-loop ([c 0] [r* r*] [env env])
 	  (cond
 	   [(= c c-n) (values r* env)]
@@ -688,7 +689,7 @@
 	    [(minus-one)  'complex-sub]
 	    [(plus-i)     'complex-add-i]
 	    [(minus-i)    'complex-sub-i]
-	    [else (error 'qa0 "Unknown unproject operation ~a" name)]))
+	    [else (s-error "Unknown unproject operation ~a" name)]))
 	(let c-loop ([c 0] [r* r*] [env env])
 	  (cond
 	   [(= c c-n) (values r* env)]
@@ -727,7 +728,7 @@
 	    [(minus-one)  'complex-add]
 	    [(plus-i)     'complex-sub-i]
 	    [(minus-i)    'complex-add-i]
-	    [else (error 'qa0 "Unknown unproject operation ~a" name)]))
+	    [else (s-error "Unknown unproject operation ~a" name)]))
 	(let c-loop ([c 0] [r* r*] [env env])
 	  (cond
 	   [(= c c-n) (values r* env)]

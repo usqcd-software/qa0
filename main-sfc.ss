@@ -6,4 +6,4 @@
 (define (main argv)
   (let ([arg* (list->vector (cdr (argv->list argv)))])
     (qa0-driver arg*)
-    #f))
+    (exit 0)))
