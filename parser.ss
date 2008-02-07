@@ -348,7 +348,7 @@
       (check-list "if-else false branch" f atleast? 1)
       (make-qa0-if (parse-input c) (parse-seq t) (parse-seq f))))
   (define (parse-seq s)
-    (if (and (list s) (> (length s) 0) (equal? (car s) 'begin))
+    (if (and (list s) (> (length s) 0) (eq? (car s) 'begin))
 	(parse-code* (cdr s) (lambda (p*) p*))
 	(list (parse-code s))))
   (define (parse-foreach form op*)

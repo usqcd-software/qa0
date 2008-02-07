@@ -177,7 +177,7 @@
 	      (read-char port) d)]
 	   [else (r-error "invalid escaped character in string" c port)]))))
 
-    (define (char-semicolon? c) (equal? c #\;))
+    (define (char-semicolon? c) (and (char? c) (char=? c #\;)))
 
     (define (decode-hex-digits port delimiter? desc)
       (let loop ([rev-digits '()])

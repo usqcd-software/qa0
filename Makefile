@@ -36,7 +36,7 @@ obj.o = $(obj.c:%.c=%.o)
 
 program = qa0
 
-.PHONY: all clean realclean list-sources
+.PHONY: all clean realclean cee list-sources
 
 all: $(program)
 
@@ -49,6 +49,9 @@ realclean: clean
 list-sources:
 	@echo $(sources.ss) $(sources.sf)
 
+sources: $(sources.ss:%.ss=%.c) $(sources.sf:%.sf=%.c)
+
+####
 $(program): $(obj.o)
 	$(CC) -o $(program) $(obj.o)
 
