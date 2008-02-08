@@ -7,6 +7,7 @@
 #fload "format.ss"
 #fload "basis.ss"
 #fload "ast.ss"
+#fload "fmap.ss"
 ;;
 ;; (provide ce-empty-env)
 ;; (provide ce-search)
@@ -27,40 +28,21 @@
 ;; (provide ce-for-each)
 ;; (provide ce-bgl)
 ;;
-;(define *cenv-data* '())
-;(define (cenv-insert-read key)
-;  (let* ([k (if (pair? key) (car key) '*headless*)]
-;	 [x (assq k *cenv-data*)])
-;    (cond
-;     [x (set-car! (cdr x) (+ (cadr x) 1))]
-;     [else (set! *cenv-data* (cons (cons k (cons 1 0)) *cenv-data*))])))
-;(define (cenv-insert-write key)
-;  (let* ([k (if (pair? key) (car key) '*headless*)]
-;	 [x (assq k *cenv-data*)])
-;    (cond
-;     [x (set-cdr! (cdr x) (+ (cddr x) 1))]
-;     [else (set! *cenv-data* (cons (cons k (cons 0 1)) *cenv-data*))])))
-;(define (cenv-report)
-;  (q-print "~%Cenv statistics: head read write~%")
-;  (for-each (lambda (x) (q-print "~a  ~a~%" (car x) (cdr x))) *cenv-data*))
 
-(define (cenv-build-key k*)
-  (cond
-   [(number? k*) (string->symbol (q-fmt "~a" k*))]
-   [(symbol? k*) k*]
-   [(null? k*) k*]
-   [(pair? k*) (let loop ([r ""] [k* k*])
-		 (cond
-		  [(null? k*) (string->symbol r)]
-		  [else (loop (q-fmt "~a ~a" r (car k*)) (cdr k*))]))]
-   [else (ic-error 'cenv-build-key "Unsupported key" k*)]))
-
+(define (ce-extend env key val) (cons (cons key val) env))
 (define (ce-empty-env) '())
 (define (ce-search env key k-found k-missed)
-;  (cenv-insert-read key)
-  (let ([x (assq (cenv-build-key key) env)])
+  (let ([x (assoc key env)])
     (if x (k-found (cdr x))
 	(k-missed))))
+(define (ce-for-each env predicate? proc)
+  (let loop ([env env])
+    (cond
+     [(null? env) #t]
+     [(predicate? (caar env) (cdar env)) (proc (caar env) (cdar env))
+      (loop (cdr env))]
+     [else (loop (cdr env))])))
+
 (define (ce-search-x env type key k-found k-missed)
   (ce-search env (list type key) k-found k-missed))
 (define-syntax ce-lookup
@@ -73,14 +55,8 @@
     [(_ env type key msg arg ...)
      (ce-search env (list type key) (lambda (x) x)
 		(lambda () (ic-error 'ce-lookup-x msg arg ...)))]))
-(define (ce-bind env k v)
-;  (cenv-insert-write k)
-  (cons (cons (cenv-build-key k) v) env))
-(define (ce-bind-x env t k v)
-  (let ([key (cenv-build-key (list t k))])
-;    (cenv-insert-write key)
-    (cons (cons key v) env)))
-
+(define (ce-bind env k v) (ce-extend env k v))
+(define (ce-bind-x env t k v) (ce-extend env (list t k) v))
 (define (ce-add-param env name value)
   (let* ([env (ce-bind-x env 'type name 'param)]
 	 [env (ce-bind-x env 'param name value)])
@@ -90,67 +66,72 @@
       (ce-add-param* (ce-add-param env (car name*) (car value*))
 		     (cdr name*) (cdr value*))))
 (define (ce-add-const env name value)
-  (let* ([t (cenv-build-key (list 'type name))]
-	 [x (assq t env)])
-    (cond
-     [x (s-error "Rebinding ~a to ~a is not allowed, old binding ~a"
-		 name value (cdr x))]
-     [else (let* ([env (ce-bind env t 'const)]
-		  [env (ce-bind-x env 'const name value)])
-	     env)])))
+  (let ([t (list 'type name)])
+    (ce-search env t
+	       (lambda (v)
+		 (s-error "Rebinding ~a to ~a is not allowed, old binding ~a"
+			  name value v))
+	       (lambda ()
+		 (let* ([env (ce-bind env t 'const)]
+			[env (ce-bind-x env 'const name value)])
+		   env)))))
 (define (ce-add-type env name c-name size align)
-  (let* ([t (cenv-build-key (list 'type name))]
-	 [x (assq t env)])
-    (cond
-     [x (s-error "Redefining type ~a is not allowed" name)]
-     [else (let* ([env (ce-bind env t 'type)]
-		  [env (ce-bind-x env 'size-of name size)]
-		  [env (ce-bind-x env 'align-of name align)]
-		  [env (ce-bind-x env 'components name '())]
-		  [env (ce-bind-x env 'aliased-to name name)]
-		  [env (ce-bind-x env 'name-of name c-name)])
-	     env)])))
+  (let ([t (list 'type name)])
+    (ce-search env t
+	       (lambda (ignore)
+		 (s-error "Redefining type ~a is not allowed" name))
+	       (lambda ()
+		 (let* ([env (ce-bind env t 'type)]
+			[env (ce-bind-x env 'size-of name size)]
+			[env (ce-bind-x env 'align-of name align)]
+			[env (ce-bind-x env 'components name '())]
+			[env (ce-bind-x env 'aliased-to name name)]
+			[env (ce-bind-x env 'name-of name c-name)])
+		   env)))))
 (define (ce-add-array env name c-name base size)
-  (let* ([bs (ce-lookup-x env 'size-of base "Size of array base ~a" base)]
-	 [ba (ce-lookup-x env 'align-of base
+  (let ([bs (ce-lookup-x env 'size-of base
+			 "Size of array base ~a" base)]
+	[ba (ce-lookup-x env 'align-of base
 			  "Alignment of array base ~a" base)]
-	 [t (cenv-build-key (list 'type name))]
-	 [x (assq t env)])
-    (cond
-     [x (s-error "Redefining array ~a is not allowed" name)]
-     [else (let* ([env (ce-bind env t 'array)]
-		  [env (ce-bind-x env 'size-of name (* size bs))]
-		  [env (ce-bind-x env 'align-of name ba)]
-		  [env (ce-bind-x env 'components name '())]
-		  [env (ce-bind-x env 'aliased-to name name)]
-		  [env (ce-bind-x env 'name-of name c-name)])
-	     env)])))
+	[t (list 'type name)])
+    (ce-search env t
+	       (lambda (ignore)
+		 (s-error "Redefining array ~a is not allowed" name))
+	       (lambda ()
+		 (let* ([env (ce-bind env t 'array)]
+			[env (ce-bind-x env 'size-of name (* size bs))]
+			[env (ce-bind-x env 'align-of name ba)]
+			[env (ce-bind-x env 'components name '())]
+			[env (ce-bind-x env 'aliased-to name name)]
+			[env (ce-bind-x env 'name-of name c-name)])
+		   env)))))
 (define (ce-add-struct env name c-name field* type*)
-  (let* ([t (cenv-build-key (list 'type name))]
-	 [x (assq t env)])
-    (cond
-     [x (s-error "Redefining structure ~a is not allowed" name)]
-     [else (let loop ([env env] [f* field*] [t* type*]
-		      [size 0] [align 1])
-	     (cond
-	      [(null? f*)
-	       (let* ([env (ce-bind-x env 'type name 'struct)]
-		      [env (ce-bind-x env 'size-of name size)]
-		      [env (ce-bind-x env 'align-of name align)]
-		      [env (ce-bind-x env 'components name field*)]
-		      [env (ce-bind-x env 'aliased-to name name)]
-		      [env (ce-bind-x env 'name-of name c-name)])
-		 env)]
-	      [else
-	       (let* ([f (car f*)] [t (car t*)]
-		      [a-f (ce-lookup-x env 'align-of t
-					"Alignment of ~a.~a" name f)]
-		      [s-f (ce-lookup-x env 'size-of t
-					"Size of field ~a.~a" name f)]
-		      [start (* a-f (quotient (+ size a-f -1) a-f))]
-		      [align (max a-f align)]
-		      [env (ce-bind env (list 'offset-of name f) start)])
-		 (loop env (cdr f*) (cdr t*) (+ start s-f) align))]))])))
+  (let ([t (list 'type name)])
+    (ce-search env t
+	       (lambda (ignore)
+		 (s-error "Redefining structure ~a is not allowed" name))
+	       (lambda ()
+		 (let loop ([env env] [f* field*] [t* type*]
+			    [size 0] [align 1])
+		   (cond
+		    [(null? f*)
+		     (let* ([env (ce-bind-x env 'type name 'struct)]
+			    [env (ce-bind-x env 'size-of name size)]
+			    [env (ce-bind-x env 'align-of name align)]
+			    [env (ce-bind-x env 'components name field*)]
+			    [env (ce-bind-x env 'aliased-to name name)]
+			    [env (ce-bind-x env 'name-of name c-name)])
+		       env)]
+		    [else
+		     (let* ([f (car f*)] [t (car t*)]
+			    [a-f (ce-lookup-x env 'align-of t
+					      "Alignment of ~a.~a" name f)]
+			    [s-f (ce-lookup-x env 'size-of t
+					      "Size of field ~a.~a" name f)]
+			    [start (* a-f (quotient (+ size a-f -1) a-f))]
+			    [align (max a-f align)]
+			    [env (ce-bind env (list 'offset-of name f) start)])
+		       (loop env (cdr f*) (cdr t*) (+ start s-f) align))]))))))
 (define (ce-add-alias env new old)
  (let ([t (ce-lookup-x env 'type old "type of ~a" old)])
     (case t
@@ -191,13 +172,7 @@
 	[a-size (ce-lookup-x env 'const a-dim "(const ~a)" a-dim)]
 	[b-size (ce-lookup-x env 'const b-dim "(const ~a)" b-dim)])
     (ce-add-type env name c-name (* a-size b-size c-size) c-align)))
-(define (ce-for-each env predicate? proc)
-  (let loop ([env env])
-    (cond
-     [(null? env) #t]
-     [(predicate? (caar env) (cdar env)) (proc (caar env) (cdar env))
-      (loop (cdr env))]
-     [else (loop (cdr env))])))
+
 (define (ce-bgl env)
   (let* ([env (ce-add-type env 'int            "int"              4  4)]
 	 [env (ce-add-type env 'pointer        "void *"           4  4)]

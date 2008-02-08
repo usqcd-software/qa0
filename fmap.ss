@@ -1,4 +1,8 @@
-;; To be included into cenv.ss
+;; Functional map.
+;;
+#fload "sfc.sf"
+#fload "common.sf"
+#fload "error.ss"
 
 ;; CPO
 (define (fmap-compare a b) ; => -1,0,1; transitive and antisymmetric
@@ -129,7 +133,7 @@
 	(lambda ()
 	  (let ([y x]
 		[z (fl+ x rstep)])
-	    (set! x (if (fl< z 1.0) z (- z 1.0)))
+	    (set! x (if (fl<? z 1.0) z (- z 1.0)))
 	    y))))
     (define (ref-ptr p) ((car p)))
     (define (set-ptr! p v) ((cdr p) v))
@@ -172,7 +176,7 @@
 		[treap-empty () (set-ptr! p kv) fm]
 		[treap-node (key hash)
 	          (cond
-		   [(fl< h hash)
+		   [(fl<? h hash)
 		    (let reorder ([lf (mk-left kv)] [rt (mk-right kv)]
 				  [q (begin (set-ptr! p kv) ref)])
 		      (variant-case q
@@ -205,51 +209,11 @@
       [treap-node (key value left right)
 	(loop (cons (cons key value) (loop r* left)) right)])))
 
-;;;; tests
-      
-(define (check-cmp a b)
-  (let ([x (fmap-compare a b)]
-	[y (fmap-compare b a)])
-    (if (zero? (+ x y)) #f
-	(format"a=~s, b=~s, (a b)->~a, (b a)->~a~%" a b x y))))
-
-(define check-sample
-  '(() #t #f #\a #\b #\newline 1 3 -5 5.34 0 -0.0001
-    aasd vb sg dgfh "asd" "a" "vb"
-    (a b c) (a b . c) (a b (fx . gg))
-    #(a asd (asd xvc . 53)) #(1 2 3 4 56)))
-
-(let loop ([a* check-sample])
-  (cond
-   [(null? a*) (printf "fmap-compare: everything is fine~%")]
-   [else (let ([a (car a*)])
-	   (let second ([b* a*])
-	     (cond
-	      [(null? b*) (loop (cdr a*))]
-	      [(check-cmp a (car b*))
-	       => (lambda (msg) (printf "error: ~a~%" msg))]
-	      [else (second (cdr b*))])))]))
-	       
-(define x 1)
-(define (new-values m k*)
-  (let loop ([m m] [k* k*])
-    (cond
-     [(null? k*) m]
-     [else (set! x (+ x 1))
-	   (loop (extend-fmap m (car k*) x)
-		 (cdr k*))])))
-
-(define (dump-map m)
-  (printf "~%start of fmap~%")
-  (let loop ([x (fmap->alist m)])
-    (cond
-     [(null? x) (printf "end of fmap~%")]
-     [else (printf "  ~s  ~s~%" (caar x) (cdar x))
-	   (loop (cdr x))])))
-
-(define map-1 (new-values (empty-fmap) check-sample))
-(define map-2 (new-values map-1 check-sample))
-(define map-3 (new-values map-1 (cdr check-sample)))
-
-
-(printf "look on map-1,2,3 now~%")
+(define (fmap-for-each fm filter proc)
+  (let loop ([fm fm])
+    (variant-case fm
+      [treap-empty () #f]
+      [treap-node (key value left right)
+	(loop left)
+	(if (filter key value) (proc key value))
+	(loop right)])))
