@@ -3,16 +3,20 @@
 #fload "sfc.sf"
 #fload "print.ss"
 
+;; Capture the output port
+(define error-port (current-output-port))
+
 ;; Reader errors
 (define (r-error* msg arg*)
-  (newline)
-  (q-display "QA0: Reader error: ")
-  (q-display msg)
+  (newline error-port)
+  (q-display "QA0: Reader error: " error-port)
+  (q-display msg error-port)
   (for-each (lambda (arg) 
 	      (write-char #\space)
-	      (if (string? arg) (q-display arg) (q-write arg))) 
+	      (if (string? arg) (q-display arg error-port) (q-write arg))) 
 	    arg*)
-  (newline)
+  (newline error-port)
+  (flush-output-port error-port)
   (reset))
 
 (define-syntax r-error
@@ -21,10 +25,11 @@
 
 ;; Syntax errors
 (define (s-error* msg arg*)
-  (newline)
-  (q-display "Syntax error: ")
-  (q-fprint* (current-output-port) msg arg*)
-  (newline)
+  (newline error-port)
+  (q-display "Syntax error: " error-port)
+  (q-fprint* error-port msg arg*)
+  (newline error-port)
+  (flush-output-port error-port)
   (reset))
 
 (define-syntax s-error
@@ -33,15 +38,15 @@
 
 ;; Internal compiler errors, aka ICE
 (define (ic-error* loc msg arg*)
-  (newline)
-  (q-display "QA0 ICE: ")
-  (q-display loc)
-  (q-display " ")
-  (q-fprint* (current-output-port) msg arg*)
-  (newline)
+  (newline error-port)
+  (q-display "QA0 ICE: " error-port)
+  (q-display loc error-port)
+  (q-display ": " error-port)
+  (q-fprint* error-port msg arg*)
+  (newline error-port)
+  (flush-output-port error-port)
   (reset))
 
 (define-syntax ic-error
   (syntax-rules ()
     [(_ loc msg arg ...) (ic-error* loc msg (list arg ...))]))
-

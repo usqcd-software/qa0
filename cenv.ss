@@ -3,6 +3,8 @@
 #fload "sfc.sf"
 #fload "common.sf"
 #fload "error.ss"
+#fload "print.ss"
+#fload "format.ss"
 #fload "basis.ss"
 #fload "ast.ss"
 ;;
@@ -25,9 +27,38 @@
 ;; (provide ce-for-each)
 ;; (provide ce-bgl)
 ;;
+;(define *cenv-data* '())
+;(define (cenv-insert-read key)
+;  (let* ([k (if (pair? key) (car key) '*headless*)]
+;	 [x (assq k *cenv-data*)])
+;    (cond
+;     [x (set-car! (cdr x) (+ (cadr x) 1))]
+;     [else (set! *cenv-data* (cons (cons k (cons 1 0)) *cenv-data*))])))
+;(define (cenv-insert-write key)
+;  (let* ([k (if (pair? key) (car key) '*headless*)]
+;	 [x (assq k *cenv-data*)])
+;    (cond
+;     [x (set-cdr! (cdr x) (+ (cddr x) 1))]
+;     [else (set! *cenv-data* (cons (cons k (cons 0 1)) *cenv-data*))])))
+;(define (cenv-report)
+;  (q-print "~%Cenv statistics: head read write~%")
+;  (for-each (lambda (x) (q-print "~a  ~a~%" (car x) (cdr x))) *cenv-data*))
+
+(define (cenv-build-key k*)
+  (cond
+   [(number? k*) (string->symbol (q-fmt "~a" k*))]
+   [(symbol? k*) k*]
+   [(null? k*) k*]
+   [(pair? k*) (let loop ([r ""] [k* k*])
+		 (cond
+		  [(null? k*) (string->symbol r)]
+		  [else (loop (q-fmt "~a ~a" r (car k*)) (cdr k*))]))]
+   [else (ic-error 'cenv-build-key "Unsupported key" k*)]))
+
 (define (ce-empty-env) '())
 (define (ce-search env key k-found k-missed)
-  (let ([x (assoc key env)])
+;  (cenv-insert-read key)
+  (let ([x (assq (cenv-build-key key) env)])
     (if x (k-found (cdr x))
 	(k-missed))))
 (define (ce-search-x env type key k-found k-missed)
@@ -42,8 +73,14 @@
     [(_ env type key msg arg ...)
      (ce-search env (list type key) (lambda (x) x)
 		(lambda () (ic-error 'ce-lookup-x msg arg ...)))]))
-(define (ce-bind env k v) (cons (cons k v) env))
-(define (ce-bind-x env t k v) (cons (cons (list t k) v) env))
+(define (ce-bind env k v)
+;  (cenv-insert-write k)
+  (cons (cons (cenv-build-key k) v) env))
+(define (ce-bind-x env t k v)
+  (let ([key (cenv-build-key (list t k))])
+;    (cenv-insert-write key)
+    (cons (cons key v) env)))
+
 (define (ce-add-param env name value)
   (let* ([env (ce-bind-x env 'type name 'param)]
 	 [env (ce-bind-x env 'param name value)])
@@ -53,8 +90,8 @@
       (ce-add-param* (ce-add-param env (car name*) (car value*))
 		     (cdr name*) (cdr value*))))
 (define (ce-add-const env name value)
-  (let* ([t (list 'type name)]
-	 [x (assoc t env)])
+  (let* ([t (cenv-build-key (list 'type name))]
+	 [x (assq t env)])
     (cond
      [x (s-error "Rebinding ~a to ~a is not allowed, old binding ~a"
 		 name value (cdr x))]
@@ -62,8 +99,8 @@
 		  [env (ce-bind-x env 'const name value)])
 	     env)])))
 (define (ce-add-type env name c-name size align)
-  (let* ([t (list 'type name)]
-	 [x (assoc t env)])
+  (let* ([t (cenv-build-key (list 'type name))]
+	 [x (assq t env)])
     (cond
      [x (s-error "Redefining type ~a is not allowed" name)]
      [else (let* ([env (ce-bind env t 'type)]
@@ -77,8 +114,8 @@
   (let* ([bs (ce-lookup-x env 'size-of base "Size of array base ~a" base)]
 	 [ba (ce-lookup-x env 'align-of base
 			  "Alignment of array base ~a" base)]
-	 [t (list 'type name)]
-	 [x (assoc t env)])
+	 [t (cenv-build-key (list 'type name))]
+	 [x (assq t env)])
     (cond
      [x (s-error "Redefining array ~a is not allowed" name)]
      [else (let* ([env (ce-bind env t 'array)]
@@ -89,8 +126,8 @@
 		  [env (ce-bind-x env 'name-of name c-name)])
 	     env)])))
 (define (ce-add-struct env name c-name field* type*)
-  (let* ([t (list 'type name)]
-	 [x (assoc t env)])
+  (let* ([t (cenv-build-key (list 'type name))]
+	 [x (assq t env)])
     (cond
      [x (s-error "Redefining structure ~a is not allowed" name)]
      [else (let loop ([env env] [f* field*] [t* type*]

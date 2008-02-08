@@ -36,7 +36,7 @@
 		      [env (ce-add-alias env 'COMPLEX 'complex-float)]
 		      [env (ce-add-alias env 'VECTOR 'vector-float)])
 		 env)]
-	      [else (ic-error "Bad value of REAL: ~a" real)])]
+	      [else (ic-error 'cfold "Bad value of REAL: ~a" real)])]
 	   [env (ce-add-const env '*mdwf-start-sum-dimension*
 			      mdwf-start-sum-dimension)]
 	   [env (ce-add-const env '*mdwf-start-sum-direction*
@@ -332,7 +332,7 @@
      [(number? c) (make-c-expr-number c)]
      [(string? c) (make-c-expr-string c)]
      [(symbol? c) (make-c-expr-quote c)]
-     [else (ic-error "Unexpected computed constant is ~a" c)]))
+     [else (ic-error 'cfold "Unexpected computed constant is ~a" c)]))
   (define (cf-reparam c)
     (cond
      [(number? c) c]
