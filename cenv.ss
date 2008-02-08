@@ -58,7 +58,6 @@
 (define (ce-bind env k v) (ce-extend env k v))
 (define (ce-bind-x env t k v) (ce-extend env (list t k) v))
 (define (ce-add-param env name value)
-  (fprintf error-port "...... ce-add-param ~s ~s~%" name value)
   (let* ([env (ce-bind-x env 'type name 'param)]
 	 [env (ce-bind-x env 'param name value)])
     env))
