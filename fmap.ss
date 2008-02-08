@@ -110,17 +110,38 @@
 (define-variant treap-empty ())
 (define-variant treap-node (key value hash left right))
 
+;;;;;
+(define (dump-fmap fm)
+  (fprintf error-port "~%FMAP DUMP~%")
+  (let loop ([fm fm] [p ""] [r ">"])
+    (variant-case fm
+      [treap-empty () #f]
+      [treap-node (key value left right)
+	(loop left (string-append p " ") " ")
+	(fprintf error-port "~a~a~s ...~%" r p key)
+	(loop right (string-append p " ") " ")]))
+  (fprintf error-port "FMAP END~%~%"))
+
 ;; fmap operations
 (define empty-fmap
   (let ([e (make-treap-empty)])
     (lambda () e)))
 
 (define (lookup-fmap fm k success failure)
+(if (or (equal? k '(type g-op))
+	(equal? k '(type elem-op)))
+    (begin
+      (fprintf error-port "lookup-fmap ~s~%ENV:~%" k)
+;      (dump-fmap fm)
+      ))
   (let loop ([fm fm])
     (variant-case fm
       [treap-empty () (failure)]
       [treap-node (key value left right)
 	(let ([z (fmap-compare k key)])
+(if (or (equal? k '(type g-op))
+	(equal? k '(type elem-op)))
+    (fprintf error-port "    loop ~s ~s~%" key value))
 	  (case z
 	    [(-1) (loop left)]
 	    [(+1) (loop right)]
@@ -152,12 +173,16 @@
 	      [treap-node (key hash left right)
 		(let ([z (fmap-compare k key)])
 		  (case z
-		    [(0) (set-ptr! p (make-treap-node k v hash left right)) fm]
+		    [(0)
+(fprintf error-port "fmap:: Update empty~%")
+		     (set-ptr! p (make-treap-node k v hash left right)) fm]
 		    [(-1) (let ([x (copy ref)])
 			    (set-ptr! p x)
+(fprintf error-port "fmap:: Update move left~%")
 			    (loop (mk-left x)))]
 		    [(+1) (let ([x (copy ref)])
 			    (set-ptr! p x)
+(fprintf error-port "fmap:: Update move right~%")
 			    (loop (mk-right x)))]
 		    [else (ic-error 'extend-fmap
 				    "Unexpected fmap-compare value ~a"
@@ -173,22 +198,27 @@
 	  (let loop ([p (mk-addr)])
 	    (let ([ref (ref-ptr p)])
 	      (variant-case ref
-		[treap-empty () (set-ptr! p kv) fm]
+		[treap-empty ()
+(fprintf error-port "fmap:: Insert on empty (loop)~%")
+ (set-ptr! p kv) fm]
 		[treap-node (key hash)
 	          (cond
 		   [(fl<? h hash)
 		    (let reorder ([lf (mk-left kv)] [rt (mk-right kv)]
-				  [q (begin (set-ptr! p kv) ref)])
+				  [q (begin (set-ptr! p kv) (copy ref))])
 		      (variant-case q
 			[treap-empty () (set-ptr! lf (empty-fmap))
 				        (set-ptr! rt (empty-fmap))
+(fprintf error-port "fmap:: Insert on empty (reorder)~%")
 					fm]
 			[treap-node (key left right)
 		          (let ([z (fmap-compare k key)])
 			    (case z
 			      [(-1) (set-ptr! rt q)
+(fprintf error-port "fmap:: Insert left move~%")
 			            (reorder lf (mk-left q) (copy left))]
 			      [(+1) (set-ptr! lf q)
+(fprintf error-port "fmap:: Insert right move~%")
 			            (reorder (mk-right q) rt (copy right))]
 			      [else (ic-error 'extend-fmap
 					      "can't happen (reorder)")]))]))]
@@ -196,10 +226,19 @@
 			       [x (copy ref)])
 			   (set-ptr! p x)
 			   (case z
-			     [(-1) (loop (mk-left x))]
-			     [(+1) (loop (mk-right x))]
+			     [(-1)
+(fprintf error-port "fmap:: Insert shift left~%")
+(loop (mk-left x))]
+			     [(+1)
+(fprintf error-port "fmap:: Insert shift right~%")
+ (loop (mk-right x))]
 			     [else (ic-error 'extend-fmap
 					     "can't happen (loop)")]))])])))))
+(fprintf error-port "extend-fmap k=~s, v=~s~%" k v)
+(if (equal? k '(param elem-op))
+    (begin 
+;      (dump-fmap fm)
+      #f))
   (lookup-fmap fm k update insert))))
 
 (define (fmap->alist fm)

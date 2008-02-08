@@ -29,19 +29,18 @@
 ;; (provide ce-bgl)
 ;;
 
-(define (ce-extend env key val) (cons (cons key val) env))
-(define (ce-empty-env) '())
-(define (ce-search env key k-found k-missed)
-  (let ([x (assoc key env)])
-    (if x (k-found (cdr x))
-	(k-missed))))
-(define (ce-for-each env predicate? proc)
-  (let loop ([env env])
-    (cond
-     [(null? env) #t]
-     [(predicate? (caar env) (cdar env)) (proc (caar env) (cdar env))
-      (loop (cdr env))]
-     [else (loop (cdr env))])))
+(define-syntax ce-extend
+  (syntax-rules ()
+    [(_ env key val) (extend-fmap env key val)]))
+(define-syntax ce-empty-env
+  (syntax-rules ()
+    [(_) (empty-fmap)]))
+(define-syntax ce-search
+  (syntax-rules ()
+    [(_ env key k-found k-missed) (lookup-fmap env key k-found k-missed)]))
+(define-syntax ce-for-each
+  (syntax-rules ()
+    [(_ env predicate? proc) (fmap-for-each env predicate? proc)]))
 
 (define (ce-search-x env type key k-found k-missed)
   (ce-search env (list type key) k-found k-missed))
@@ -54,10 +53,12 @@
   (syntax-rules ()
     [(_ env type key msg arg ...)
      (ce-search env (list type key) (lambda (x) x)
-		(lambda () (ic-error 'ce-lookup-x msg arg ...)))]))
+		(lambda ()
+		  (ic-error 'ce-lookup-x msg arg ...)))]))
 (define (ce-bind env k v) (ce-extend env k v))
 (define (ce-bind-x env t k v) (ce-extend env (list t k) v))
 (define (ce-add-param env name value)
+  (fprintf error-port "...... ce-add-param ~s ~s~%" name value)
   (let* ([env (ce-bind-x env 'type name 'param)]
 	 [env (ce-bind-x env 'param name value)])
     env))

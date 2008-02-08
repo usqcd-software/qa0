@@ -219,6 +219,7 @@
     (let ([vv (cf-eval-mname id env)])
       (variant-case (ce-lookup-x env 'macro vv "Macro call of ~a (~a)" vv id)
 	[qa0-macro-def (arg* code*)
+(fprintf error-port "macro call of ~a~%" vv)
 	  (if (not (= (length arg*) (length p*)))
 	      (s-error "Macro call ~a expects ~a arguments"
 		       (list* 'macro id p*) (length arg*)))
@@ -343,12 +344,18 @@
     (let ([type (cf-eval-param type env)])
       (ce-search-x env 'aliased-to type (lambda (x) x) (lambda () type))))
   (define (cf-eval-const const env)
+    (fprintf error-port "... cf-eval-const ~s~%" const)
     (variant-case const
       [c-expr-quote (literal) literal]
       [c-expr-op (name c-expr*) (cx-const-op name c-expr* env)]
       [c-expr-string (string) string]
       [c-expr-number (number) number]
-      [c-expr-id (id) (let ([t (ce-lookup-x env 'type id "Type of ~a" id)]
+      [c-expr-id (id)
+(if (eq? id 'g-op)
+    (begin (fprintf error-port "Eval-const ~a, env:~%" id)
+;	   (dump-fmap env)
+))
+ (let ([t (ce-lookup-x env 'type id "Type of ~a" id)]
 			    [v (cf-eval-id id env)])
 			(cond
 			  [(number? v) v]

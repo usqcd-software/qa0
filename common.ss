@@ -46,6 +46,10 @@
 	  [(reader ...) (map (lambda (fld)
 			       (mk-name (syntax name) (syntax name) "->" fld))
 			     (syntax->list (syntax (field ...))))]
+	  [(writer ...) (map (lambda (fld)
+			       (mk-name (syntax name)
+					"set-" (syntax name) "-" fld "!"))
+			     (syntax->list (syntax (field ...))))]
 	  [count (length (syntax->list (syntax (name field ...))))])
 	 (with-syntax
 	   ([(index ...) (let f ([i 1])
@@ -60,6 +64,9 @@
 				       (= (vector-length object) count)
 				       (eq? (vector-ref object 0) 'name))))
 	      (define reader (lambda (object) (vector-ref object index)))
+	      ...
+	      (define writer (lambda (object value)
+			       (vector-set! object index value)))
 	      ...))))])))
 (define variant-type (lambda (variant) (vector-ref variant 0)))
 (define-syntax variant-case
@@ -109,3 +116,4 @@
 
 (define (display-fixnum x p) (display x p))
 (define (display-flonum x p) (display x p))
+(define (fl<? a b) (< a b))

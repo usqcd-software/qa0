@@ -7,6 +7,7 @@
 (load "ast.ss")
 (load "attr.ss")
 (load "basis.ss")
+(load "fmap.ss")
 (load "cenv.ss")
 (load "verbose.ss")
 (load "parser.ss")
