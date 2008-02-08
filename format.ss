@@ -8,40 +8,49 @@
 
 ;; a copy of the printer...
 (define (q-fmt* fmt arg*)
+  (define (add-fmt r* a b)
+    (if (= a b) r*
+	(string-append r* (substring fmt a b))))
+  (define (out-newline r*)
+    (string-append r* (string #\newline)))
   (define (out-char c d? r*)
     (cond
-     [d? (cons c r*)]
-     [(char=? c #\newline) (out-string "#\\newline" #t r*)]
-     [(char=? c #\space) (out-string "#\\space" #t r*)]
-     [else (cons c (out-string "#\\" #t r*))]))
+     [d? (string-append r* (string c))]
+     [(char=? c #\newline) (if d? (out-newline r*)
+			       (string-append r* "#\\newline"))]
+     [(char=? c #\space) (if d? (string-append r* " ")
+			     (string-append r* "#\\space"))]
+     [else (string-append (string-append r* "#\\") (string c))]))
   (define (out-string s d? r*)
-    (let ([l (string-length s)])
-      (let loop ([r* (if d? r* (out-char #\" #t r*))] [i 0])
-      (cond
-       [(= i l) (if d? r* (out-char #\" #t r*))]
-       [else (let ([c (string-ref s i)])
-	       (cond
-		[d? (loop (cons c r*) (+ i 1))]
-		[(or (char=? c #\\) (char=? c #\"))
-		 (loop (out-char c #t (out-char #\\ #t r*)) (+ i 1))]
-		[else (loop (out-char c #t r*) (+ i 1))]))]))))
+    (if d? (string-append r* s)
+	(let ([l (string-length s)])
+	  (let loop ([r* (string-append r* "\"")] [i 0])
+	    (cond
+	     [(= i l) (string-append r* "\"")]
+	     [else
+	      (let ([c (string-ref s i)])
+		(cond
+		 [(or (char=? c #\\) (char=? c #\"))
+		  (loop (string-append r* (string #\\ c)) (+ i 1))]
+		 [else (loop (string-append r* (string c)) (+ i 1))]))])))))
   (define (out-box x d? r*)
     (fmt/1 (unbox x) d? (out-string "#&" r*)))
   (define (out-vector x d? r*)
     (let ([n (vector-length x)])
-      (let loop ([r* (out-string "#(" #t r*)] [i 0])
+      (let loop ([r* (string-append r* "#(")] [i 0])
 	(cond
-	 [(= i n) (out-char #\) #t r*)]
+	 [(= i n) (string-append r* ")")]
 	 [(zero? i) (loop (fmt/1 (vector-ref x i) d? r*) (+ i 1))]
-	 [else (loop (fmt/1 (vector-ref x i) d? (out-string " " #t r*))
+	 [else (loop (fmt/1 (vector-ref x i) d? (string-append r* " "))
 		     (+ i 1))]))))
   (define (out-pair x d? r*)
-    (let loop ([r* (out-char #\( #t r*)] [x x])
+    (let loop ([r* (string-append r* "(")] [x x])
       (let ([r* (fmt/1 (car x) d? r*)])
 	(cond
-	 [(pair? (cdr x)) (loop (out-char #\space #t r*) (cdr x))]
-	 [(null? (cdr x)) (out-char #\) #t r*)]
-	 [else (out-char #\) (fmt/1 (cdr x d? (out-string " . " #t r*))))]))))
+	 [(pair? (cdr x)) (loop (string-append r* " ") (cdr x))]
+	 [(null? (cdr x)) (string-append r* ")")]
+	 [else (string-append (fmt/1 (cdr x) d? (string-append r* " . "))
+			      ")")]))))
   (define (fmt/1 x d? r*)
     (cond
      [(eof-object? x) (out-string "#<eof>" #t r*)]
@@ -59,22 +68,24 @@
      [(box? x) (out-box x d? r*)]
      [(procedure? x) (out-string "#<procedure>" #t r*)]
      [else (out-string "#<unknown>" #t r*)]))
-
-  (let loop ([flst (string->list fmt)] [arg* arg*] [r* '()])
-    (cond
-     [(null? flst) (list->string (reverse r*))]
-     [(char=? (car flst) #\~)
-      (and (pair? (cdr flst))
-	   (let ([c (cadr flst)])
-	     (cond
-	      [(char=? c #\a) (loop (cddr flst) (cdr arg*)
-				    (fmt/1 (car arg*) #t r*))]
-	      [(char=? c #\s) (loop (cddr flst) (cdr arg*)
-				    (fmt/1 (car arg*) #f r*))]
-	      [(char=? c #\~) (loop (cddr flst) arg* (cons #\~ r*))]
-	      [(char=? c #\%) (loop (cddr flst) arg* (cons #\newline r*))]
-	      [else (ic-error 'q-fmt "unrecognized format ~a" (cadr flst))])))]
-     [else (loop (cdr flst) arg* (cons (car flst) r*))])))
+  
+  (let ([f-len (string-length fmt)])
+    (let loop ([r* ""] [arg* arg*] [a 0] [b 0])
+      (cond
+       [(= b f-len) (add-fmt r* a b)]
+       [(char=? (string-ref fmt b) #\~)
+	(if (= b (- f-len 1)) (ic-error 'q-fmt "Dangling ~~, fmt ~s" fmt))
+	(if (null? arg*) (ic-error 'q-fmt "Missing arguments for fmt ~s" fmt))
+	(let* ([x (+ b 1)]
+	       [c (string-ref fmt x)])
+	  (cond
+	   [(char=? c #\a) (loop (fmt/1 (car arg*) #t r*) arg* (+ x 1) (+ x 1))]
+	   [(char=? c #\s) (loop (fmt/1 (car arg*) #f r*) arg* (+ x 1) (+ x 1))]
+	   [(char=? c #\~) (loop (string-append r* "~") arg* (+ x 1) (+ x 1))]
+	   [(char=? c #\%) (loop (out-newline r*) arg* (+ x 1) (+ x 1))]
+	   [else (ic-error 'q-fmt "unrecognized format ~a in ~s" c fmt)]))]
+       [else (loop (string-append r* (string (string-ref fmt b)))
+		   arg* a (+ b 1))]))))
 
 (define-syntax q-fmt
   (syntax-rules ()
