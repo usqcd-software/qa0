@@ -2,109 +2,17 @@
 ;;
 #fload "sfc.sf"
 #fload "common.sf"
+#fload "format.ss"
 #fload "error.ss"
 
+;; key->cpo
+(define (fmap-build-key k) (q-fmt "~s" k))
 ;; CPO
 (define (fmap-compare a b) ; => -1,0,1; transitive and antisymmetric
-  (define (cmp-vector a b)
-    (let ([n-a (vector-length a)]
-	  [n-b (vector-length b)])
-      (cond
-       [(= n-a n-b) (let loop ([i 0])
-		      (cond
-		       [(= i n-a) 0]
-		       [else (let ([x (cmp (vector-ref a i) (vector-ref b i))])
-			       (cond
-				[(zero? x) (loop (+ i 1))]
-				[else x]))]))]
-       [else (normalize (- n-a n-b))])))
-  (define (cmp-string a b)
-    (cond
-     [(string<? a b) -1]
-     [(string>? a b) +1]
-     [else 0]))
-  (define (compare-vector a b)
-    (cond
-     [(null? b) +1]
-     [(boolean? b) +1]
-     [(char? b) +1]
-     [(number? b) +1]
-     [(symbol? b) +1]
-     [(string? b) +1]
-     [(pair? b) +1]
-     [(vector? b) (cmp-vector a b)]
-     [else (ic-error 'fmap-compare "Unsupported argument ~a" b)]))
-  (define (compare-pair a b)
-    (cond
-     [(null? b) +1]
-     [(boolean? b) +1]
-     [(char? b) +1]
-     [(number? b) +1]
-     [(symbol? b) +1]
-     [(string? b) +1]
-     [(pair? b) (let ([h (cmp (car a) (car b))])
-		  (cond
-		   [(zero? h) (cmp-x (cdr a) (cdr b))]
-		   [else h]))]
-     [else -1]))
-  (define (compare-string a b)
-    (cond
-     [(null? b) +1]
-     [(boolean? b) +1]
-     [(char? b) +1]
-     [(number? b) +1]
-     [(symbol? b) +1]
-     [(string? b) (cmp-string a b)]
-     [else -1]))
-  (define (compare-symbol a b)
-    (cond
-     [(null? b) +1]
-     [(boolean? b) +1]
-     [(char? b) +1]
-     [(number? b) +1]
-     [(symbol? b) (normalize (cmp-string (symbol->string a)
-					 (symbol->string b)))]
-     [else -1]))
-  (define (compare-number a b)
-    (cond
-     [(null? b) +1]
-     [(boolean? b) +1]
-     [(char? b) +1]
-     [(number? b) (normalize (- a b))]
-     [else -1]))
-  (define (compare-char a b)
-    (cond
-     [(null? b) +1]
-     [(boolean? b) +1]
-     [(char? b) (normalize (- (char->integer a) (char->integer b)))]
-     [else -1]))
-  (define (compare-boolean a b)
-    (cond
-     [(null? b) +1]
-     [(boolean? b) (if a +1 -1)]
-     [else -1]))
-  (define (normalize v)
-    (cond
-     [(negative? v) -1]
-     [(positive? v) +1]
-     [else 0]))
-  (define (cmp a b)
-    (cond
-     [(equal? a b) 0]
-     [else (cmp-x a b)]))
-  (define (cmp-x a b)
-    (cond
-     [(null? a) -1]
-     [(boolean? a) (compare-boolean a b)]
-     [(char? a) (compare-char a b)]
-     [(number? a) (compare-number a b)]
-     [(symbol? a) (compare-symbol a b)]
-     [(string? a) (compare-string a b)]
-     [(pair? a) (compare-pair a b)]
-     [(vector? a) (compare-vector a b)]
-     [else (ic-error 'fmap-compare "Unsupported argument ~a" a)]))
-
-  (cmp a b))
+  (cond
+   [(string<? a b) +1]
+   [(string>? a b) -1]
+   [else 0]))
 
 ;; treap variants
 (define-variant treap-empty ())
@@ -128,16 +36,17 @@
     (lambda () e)))
 
 (define (lookup-fmap fm k success failure)
-  (let loop ([fm fm])
-    (variant-case fm
-      [treap-empty () (failure)]
-      [treap-node (key value left right)
-	(let ([z (fmap-compare k key)])
-	  (case z
-	    [(-1) (loop left)]
-	    [(+1) (loop right)]
-	    [else (success value)]))])))
-
+  (let ([mk (fmap-build-key k)])
+    (let loop ([fm fm])
+      (variant-case fm
+	[treap-empty () (failure)]
+	[treap-node (key value left right)
+  	  (let ([z (fmap-compare mk key)])
+	    (case z
+	      [(-1) (loop left)]
+	      [(+1) (loop right)]
+	      [else (success value)]))]))))
+  
 (define extend-fmap
   (let ()
     (define fmap-random!
@@ -156,15 +65,16 @@
       (cons (lambda () (treap-node->right p))
 	    (lambda (v) (set-treap-node-right! p v))))
     (lambda (fm k v)
+      (define mk (fmap-build-key k))
       (define (mk-addr) (cons (lambda () fm) (lambda (v) (set! fm v))))
       (define (update ignore)
 	(let loop ([p (mk-addr)])
 	  (let ([ref (ref-ptr p)])
 	    (variant-case ref
 	      [treap-node (key hash left right)
-		(let ([z (fmap-compare k key)])
+		(let ([z (fmap-compare mk key)])
 		  (case z
-		    [(0) (set-ptr! p (make-treap-node k v hash left right)) fm]
+		    [(0) (set-ptr! p (make-treap-node mk v hash left right)) fm]
 		    [(-1) (let ([x (copy ref)])
 			    (set-ptr! p x)
 			    (loop (mk-left x)))]
@@ -181,7 +91,7 @@
             (make-treap-node key value hash left right)]))
       (define (insert)
 	(let* ([h (fmap-random!)]
-	       [kv (make-treap-node k v h (empty-fmap) (empty-fmap))])
+	       [kv (make-treap-node mk v h (empty-fmap) (empty-fmap))])
 	  (let loop ([p (mk-addr)])
 	    (let ([ref (ref-ptr p)])
 	      (variant-case ref
@@ -196,7 +106,7 @@
 				        (set-ptr! rt (empty-fmap))
 					fm]
 			[treap-node (key left right)
-		          (let ([z (fmap-compare k key)])
+		          (let ([z (fmap-compare mk key)])
 			    (case z
 			      [(-1) (set-ptr! rt q)
 			            (reorder lf (mk-left q) (copy left))]
@@ -204,7 +114,7 @@
 			            (reorder (mk-right q) rt (copy right))]
 			      [else (ic-error 'extend-fmap
 					      "can't happen (reorder)")]))]))]
-		   [else (let ([z (fmap-compare k key)]
+		   [else (let ([z (fmap-compare mk key)]
 			       [x (copy ref)])
 			   (set-ptr! p x)
 			   (case z

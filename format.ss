@@ -40,7 +40,7 @@
       (let ([r* (fmt/1 (car x) d? r*)])
 	(cond
 	 [(pair? (cdr x)) (loop (out-char #\space #t r*) (cdr x))]
-	 [(null? (cdr x) (out-char #\) #t r*))]
+	 [(null? (cdr x)) (out-char #\) #t r*)]
 	 [else (out-char #\) (fmt/1 (cdr x d? (out-string " . " #t r*))))]))))
   (define (fmt/1 x d? r*)
     (cond
@@ -48,7 +48,7 @@
      [(input-port? x) (out-string "#<iport>" #t r*)]
      [(output-port? x) (out-string "#<oport>" #t r*)]
      [(symbol? x) (out-string (symbol->string x) #t r*)]
-     [(pair? x) (out-pair x r*)]
+     [(pair? x) (out-pair x d? r*)]
      [(fixnum? x) (out-string (number->string x) #t r*)]
      [(flonum? x) (out-string (number->string x) #t r*)]
      [(null? x) (out-string "()" #t r*)]
