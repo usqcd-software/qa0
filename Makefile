@@ -70,6 +70,7 @@ $(sources.ss:%.ss=%.c): sfc.sf
 common.c: sfc.sf
 error.c:  print.ss
 print.c:  error.ss
+print.c:  format.ss
 read.c:  error.ss
 format.c:  error.ss
 ast.c:  common.sf

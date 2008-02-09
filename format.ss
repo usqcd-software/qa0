@@ -75,9 +75,12 @@
        [(= b f-len) (add-fmt r* a b)]
        [(char=? (string-ref fmt b) #\~)
 	(if (= b (- f-len 1)) (ic-error 'q-fmt "Dangling ~~, fmt ~s" fmt))
-	(if (null? arg*) (ic-error 'q-fmt "Missing arguments for fmt ~s" fmt))
 	(let* ([x (+ b 1)]
 	       [c (string-ref fmt x)])
+	  (if (and (or (char=? c #\a)
+		       (char=? c #\s))
+		   (null? arg*))
+	      (ic-error 'q-fmt "Missing arguments for fmt ~s" fmt))
 	  (cond
 	   [(char=? c #\a) (loop (fmt/1 (car arg*) #t r*) arg* (+ x 1) (+ x 1))]
 	   [(char=? c #\s) (loop (fmt/1 (car arg*) #f r*) arg* (+ x 1) (+ x 1))]
