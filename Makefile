@@ -6,7 +6,7 @@ bindir = $(prefix)/bin
 docdir = $(prefix)/share/doc/$(VERSION)
 
 SUBDIRS = scheme bootstrap doc
-VERSION = qa0-1.0.0
+VERSION = qa0-1.0.2
 DOCS    =  doc/qa0.pdf README COPYRIGHT AUTHORS
 
 .PHONY: all dist clean realclean install install-doc tar
@@ -36,4 +36,4 @@ install-doc:
 	done
 
 tar: realclean
-	x=`pwd`; cd .. | tar -cvf - `basename $$x` | bzip2 -9 > $$x.tar.bz2
+	x=`pwd`; cd .. ; tar -cvf - `basename $$x` | bzip2 -9 > $$x.tar.bz2

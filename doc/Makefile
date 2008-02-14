@@ -21,7 +21,6 @@ clean:
               $(noweb:%.nw=%.toc)
 
 realclean: clean
-	$(RM) $(f.pdf)
 
 pdf: $(f.pdf)
 
