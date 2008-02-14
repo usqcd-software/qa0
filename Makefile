@@ -23,4 +23,4 @@ install: all
 	cp bootstrap/qa0 $(prefix)/
 
 tar: realclean
-	x=`pwd`; cd .. tar -cvf - `basename $$x` | bzip2 -9 > $$x.tar.bz2
+	x=`pwd`; cd .. | tar -cvf - `basename $$x` | bzip2 -9 > $$x.tar.bz2
