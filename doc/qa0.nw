@@ -299,6 +299,11 @@ The following targets are supported:
 \begin{itemize}
 \item[\terminal{c-header}] The header file for C.
 \item[\terminal{c99}] The programming language C as defined in ISO/IEC 9989.
+\item[\terminal{c99-64}] The programming language C as defined in ISO/IEC 9989
+     on a 64-bit machine.
+\item[\terminal{cee}] The programming language C without complex arithmetics.
+\item[\terminal{cee-64}] The programming language C without complex arithmetics
+     on a 64-bit machine.
 \item[\terminal{xlc/bgl}] IBM's XLC compiler for BG/L with intrinsics.
 \item[\terminal{bgl}] BG/L assembler.
 \end{itemize}
@@ -1104,6 +1109,16 @@ Compute $r\leftarrow a + b c$.
 
 
 \begin{grammar}
+\terminal{(}\terminal{op} \terminal{double-msub}
+     \terminal{(} \terminal{)}
+   \terminal{(} $r_d$ \terminal{)}
+   \terminal{(} $a_d$ $b_d$ $c_d$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow a - b c$.
+
+
+\begin{grammar}
 \terminal{(}\terminal{op} \terminal{double-move}
      \terminal{(} \terminal{)}
    \terminal{(} $r_d$ \terminal{)}
@@ -1121,6 +1136,15 @@ Compute $r\leftarrow a$.
 \terminal{)}
 \end{grammar}
 Compute $r\leftarrow - a$.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{double-zero}
+     \terminal{(} \terminal{)}
+   \terminal{(} $r_d$ \terminal{)}
+   \terminal{(} \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow 0$.
 
 \subsection{Integer operations}
 \begin{grammar}

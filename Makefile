@@ -1,11 +1,15 @@
 SFC    = sfc -v
 CC     = gcc -O3 -Wall
-prefix = $$HOME/Local/bin
+prefix = $$HOME/Local
 
-SUBDIRS = scheme bootstrap
+bindir = $(prefix)/bin
+docdir = $(prefix)/share/doc/$(VERSION)
+
+SUBDIRS = scheme bootstrap doc
 VERSION = qa0-1.0.0
+DOCS    =  doc/qa0.pdf README COPYRIGHT AUTHORS
 
-.PHONY: all dist clean realclean install tar
+.PHONY: all dist clean realclean install install-doc tar
 
 all:
 	$(MAKE) -C bootstrap $@
@@ -17,10 +21,19 @@ clean realclean:
 
 dist:
 	$(MAKE) -C scheme all
+	$(MAKE) -C doc all
 
-install: all
-	[ -d $(prefix) ] || mkdir -p $(prefix)
-	cp bootstrap/qa0 $(prefix)/
+install: all install-doc
+	[ -d $(bindir) ] || mkdir -p $(bindir)
+	cp bootstrap/qa0 $(bindir)/
+	chmod -w $(bindir)/qa0
+
+install-doc:
+	[ -d $(docdir) ] || mkdir -p $(docdir)
+	for f in $(DOCS); do \
+	   cp $$f $(docdir)/ ; \
+	   chmod -w $$f; \
+	done
 
 tar: realclean
 	x=`pwd`; cd .. | tar -cvf - `basename $$x` | bzip2 -9 > $$x.tar.bz2

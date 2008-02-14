@@ -2,27 +2,18 @@ NOWEAVE  = noweave -filter btdefn -index -latex -delay
 NOTANGLE = notangle -filter btdefn
 NOINDEX  = noindex
 CPIF     = cpif
-MZSCHEME = mzscheme
-MZC      = mzc
-INDENT   = indent
 LATEX    = latex
 DVIPDFM  = dvipdfm
-#TFLAGS   = -L'\#line %L "%F"%N'
 
-noweb = mdwf.nw \
-        qa0.nw \
-        qcd-defs.nw
-
-sources = ../port/qop-mdwf3.h \
-          ../utils/basis.ss
+noweb = qa0.nw
 
 f.tex = $(noweb:%.nw=%.tex)
 f.dvi = $(noweb:%.nw=%.dvi)
-f.pdf = $(noweb:%.nw=../doc/%.pdf)
+f.pdf = $(noweb:%.nw=%.pdf)
 
-.PHONY: all clean realclean 
+.PHONY: all clean realclean
 
-all: pdf sources
+all: $(f.pdf)
 
 clean:
 	$(RM) $(noweb:%.nw=%.aux) $(noweb:%.nw=%.dvi) $(noweb:%.nw=%.log) \
@@ -30,14 +21,12 @@ clean:
               $(noweb:%.nw=%.toc)
 
 realclean: clean
-	$(RM) $(f.pdf) $(sources)
-
-sources: $(sources)
+	$(RM) $(f.pdf)
 
 pdf: $(f.pdf)
 
 ###
-$(f.pdf): ../doc/%.pdf: %.dvi
+$(f.pdf): %.pdf: %.dvi
 	$(DVIPDFM) -o $@ $<
 
 $(f.dvi): %.dvi: %.tex
@@ -50,5 +39,3 @@ $(f.dvi): %.dvi: %.tex
 $(f.tex): %.tex: %.nw
 	$(NOWEAVE) $< > $@
 
-$(sources): mdwf.nw
-	$(NOTANGLE) $(TFLAGS) -R'File [[$@]]' -c $< | $(CPIF) $@
