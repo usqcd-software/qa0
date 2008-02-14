@@ -1,6 +1,6 @@
 SFC    = sfc -v
 CC     = gcc -O3 -Wall
-prefix = $HOME/Local/bin
+prefix = $$HOME/Local/bin
 
 SUBDIRS = scheme bootstrap
 VERSION = qa0-1.0.0
