@@ -9,7 +9,7 @@
 ;; a copy of the printer...
 (define (q-fmt* fmt arg*)
   (define (add-fmt r* a b)
-    (if (= a b) r*
+    (if (>= a b) r*
 	(string-append r* (substring fmt a b))))
   (define (out-newline r*)
     (string-append r* (string #\newline)))
@@ -75,20 +75,22 @@
        [(= b f-len) (add-fmt r* a b)]
        [(char=? (string-ref fmt b) #\~)
 	(if (= b (- f-len 1)) (ic-error 'q-fmt "Dangling ~~, fmt ~s" fmt))
-	(let* ([x (+ b 1)]
+	(let* ([r* (add-fmt r* a b)]
+	       [x (+ b 1)]
 	       [c (string-ref fmt x)])
 	  (if (and (or (char=? c #\a)
 		       (char=? c #\s))
 		   (null? arg*))
 	      (ic-error 'q-fmt "Missing arguments for fmt ~s" fmt))
 	  (cond
-	   [(char=? c #\a) (loop (fmt/1 (car arg*) #t r*) arg* (+ x 1) (+ x 1))]
-	   [(char=? c #\s) (loop (fmt/1 (car arg*) #f r*) arg* (+ x 1) (+ x 1))]
+	   [(char=? c #\a) (loop (fmt/1 (car arg*) #t r*)
+				 (cdr arg*) (+ x 1) (+ x 1))]
+	   [(char=? c #\s) (loop (fmt/1 (car arg*) #f r*)
+				 (cdr arg*) (+ x 1) (+ x 1))]
 	   [(char=? c #\~) (loop (string-append r* "~") arg* (+ x 1) (+ x 1))]
 	   [(char=? c #\%) (loop (out-newline r*) arg* (+ x 1) (+ x 1))]
 	   [else (ic-error 'q-fmt "unrecognized format ~a in ~s" c fmt)]))]
-       [else (loop (string-append r* (string (string-ref fmt b)))
-		   arg* a (+ b 1))]))))
+       [else (loop r* arg* a (+ b 1))]))))
 
 (define-syntax q-fmt
   (syntax-rules ()

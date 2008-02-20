@@ -16,7 +16,7 @@
 
 ;; treap variants
 (define-variant treap-empty ())
-(define-variant treap-node (key value hash left right))
+(define-variant treap-node (key verbatim value hash left right))
 
 ;;;;;
 ;(define (dump-fmap fm)
@@ -24,7 +24,7 @@
 ;  (let loop ([fm fm] [p ""] [r ">"])
 ;    (variant-case fm
 ;      [treap-empty () #f]
-;      [treap-node (key value left right)
+;      [treap-node (key verbatim value left right)
 ;	(loop left (string-append p " ") " ")
 ;	(fprintf error-port "~a~a~s ...~%" r p key)
 ;	(loop right (string-append p " ") " ")]))
@@ -74,7 +74,8 @@
 	      [treap-node (key hash left right)
 		(let ([z (fmap-compare mk key)])
 		  (case z
-		    [(0) (set-ptr! p (make-treap-node mk v hash left right)) fm]
+		    [(0) (set-ptr! p (make-treap-node mk k v hash left right))
+		         fm]
 		    [(-1) (let ([x (copy ref)])
 			    (set-ptr! p x)
 			    (loop (mk-left x)))]
@@ -87,11 +88,11 @@
       (define (copy t)
 	(variant-case t
 	  [treap-empty () t]
-	  [treap-node (key value hash left right)
-            (make-treap-node key value hash left right)]))
+	  [treap-node (key verbatim value hash left right)
+            (make-treap-node key verbatim value hash left right)]))
       (define (insert)
 	(let* ([h (fmap-random!)]
-	       [kv (make-treap-node mk v h (empty-fmap) (empty-fmap))])
+	       [kv (make-treap-node mk k v h (empty-fmap) (empty-fmap))])
 	  (let loop ([p (mk-addr)])
 	    (let ([ref (ref-ptr p)])
 	      (variant-case ref
@@ -128,14 +129,14 @@
   (let loop ([r* '()] [fm fm])
     (variant-case fm
       [treap-empty () r*]
-      [treap-node (key value left right)
-	(loop (cons (cons key value) (loop r* left)) right)])))
+      [treap-node (verbatim value left right)
+	(loop (cons (cons verbatim value) (loop r* left)) right)])))
 
 (define (fmap-for-each fm filter proc)
   (let loop ([fm fm])
     (variant-case fm
       [treap-empty () #f]
-      [treap-node (key value left right)
+      [treap-node (verbatim value left right)
 	(loop left)
-	(if (filter key value) (proc key value))
+	(if (filter verbatim value) (proc verbatim value))
 	(loop right)])))
