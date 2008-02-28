@@ -488,11 +488,11 @@
       (q2c-check-list input* 2 "QCD mul inputs")
       (let ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
 	    [f-n (ce-lookup-x env 'const f-n "Field dimension")]
-	    [r-a (car input*)]
+	    [r-U (car input*)]
 	    [r-b (cadr input*)]
 	    [r-r (car output*)])
 	(define (s-mul-z r* env)
-	  (let-values* ([(a env) (u-get r-a 0 0 env)])
+	  (let-values* ([(U-v env) (u-get r-U 0 0 env)])
 	    (let loop ([f 0] [r* r*] [env env])
 	      (cond
 	       [(= f f-n) (values r* env)]
@@ -502,7 +502,7 @@
 			     (cons (make-qa0-operation attr*
 				     op-0
 				     (list (make-reg z))
-				     (list (make-reg a) (make-reg b)))
+				     (list (make-reg U-v) (make-reg b)))
 				   r*)
 			     env))]))))
 	(define (s-mul-1 r* env)
@@ -516,13 +516,13 @@
 		   [(= y f-n) (x-loop (+ x 1) r* env)]
 		   [else
 		    (let-values* ([(q-v env) (q2c-rename env q t x y)]
-				  [(a-v env) (u-get r-a x 0 env)]
+				  [(U-v env) (u-get r-U x 0 env)]
 				  [(b-v env) (q2c-rename env r-b t 0 y)])
 		      (y-loop (+ y 1)
 			      (cons (make-qa0-operation attr*
 				      op-0
 				      (list (make-reg q-v))
-				      (list (make-reg a-v) (make-reg b-v)))
+				      (list (make-reg U-v) (make-reg b-v)))
 				    r*)
 			      env))]))]))))
 	(define (s-madd-x r-x r-r c r* env)
@@ -536,15 +536,15 @@
 		 [else
 		  (let-values* ([(q-v env) (q2c-rename env r-x t x y)]
 				[(r-v env) (q2c-rename env r-r t x y)]
-				[(a-v env) (u-get r-a x c env)]
+				[(U-v env) (u-get r-U x c env)]
 				[(b-v env) (q2c-rename env r-b t c y)])
 		    (y-loop (+ y 1)
 			    (cons (make-qa0-operation attr*
 				    op-k
 				    (list (make-reg r-v))
-				    (list (make-reg a-v)
-					  (make-reg b-v)
-					  (make-reg q-v)))
+				    (list (make-reg q-v)
+					  (make-reg U-v)
+					  (make-reg b-v)))
 				  r*)
 			    env))]))])))
 	(if (= c-n 1) (s-mul-z r* env)
