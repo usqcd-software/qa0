@@ -259,19 +259,65 @@
 						 (make-reg c-re)))
 		       r*)
 		env)))
+    (define (c2r-real-cmul-conj-init attr* output* input* r* env)
+      (let-values* ([r (car output*)]
+		    [x (new-reg)]
+		    [(a-re env) (c2r-rename env (car input*) 'real)]
+		    [(a-im env) (c2r-rename env (car input*) 'imag)]
+		    [(b-re env) (c2r-rename env (cadr input*) 'real)]
+		    [(b-im env) (c2r-rename env (cadr input*) 'imag)])
+	(values (list* (make-qa0-operation attr* 'double-madd
+					   output*
+					   (list (make-reg x)
+						 (make-reg a-im)
+						 (make-reg b-im)))
+		       (make-qa0-operation attr* 'double-mul
+					   (list (make-reg x))
+					   (list (make-reg a-re)
+						 (make-reg b-re)))
+		       r*)
+		env)))
+    (define (c2r-real-cmul-conj-add attr* output* input* r* env)
+      (let-values* ([r (car output*)]
+		    [x (new-reg)]
+		    [s (car input*)]
+		    [(a-re env) (c2r-rename env (cadr input*) 'real)]
+		    [(a-im env) (c2r-rename env (cadr input*) 'imag)]
+		    [(b-re env) (c2r-rename env (caddr input*) 'real)]
+		    [(b-im env) (c2r-rename env (caddr input*) 'imag)])
+	(values (list* (make-qa0-operation attr* 'double-madd
+					   output*
+					   (list (make-reg x)
+						 (make-reg a-im)
+						 (make-reg b-im)))
+		       (make-qa0-operation attr* 'double-madd
+					   (list (make-reg x))
+					   (list s
+						 (make-reg a-re)
+						 (make-reg b-re)))
+		       r*)
+		env)))
+    (define (c2r-real-cmul-conj-fini attr* output* input* r* env)
+      (values (list* (make-qa0-operation attr* 'double-move
+					 output*
+					 input*)
+		     r*)
+	      env))
     (define (c2r-complex-norm-init attr* output* input* r* env)
       (values (list* (make-qa0-operation attr* 'double-zero output* '()) r*)
 	      env))
     (define (c2r-complex-norm-add attr* output* input* r* env)
       (let-values* ([a (car input*)]
+		    [x (new-reg)]
 		    [(b-re env) (c2r-rename env (cadr input*) 'real)]
 		    [(b-im env) (c2r-rename env (cadr input*) 'imag)])
 	(values (list* (make-qa0-operation attr* 'double-madd
 					   output*
-					   (list a (make-reg b-im)
+					   (list (make-reg x)
+						 (make-reg b-im)
 						 (make-reg b-im)))
 		       (make-qa0-operation attr* 'double-madd
-					   output*
+					   (list (make-reg x))
 					   (list a (make-reg b-re)
 						 (make-reg b-re)))
 		       r*)
@@ -400,6 +446,14 @@
 						     (make-reg c-re)))
 			   r*)
 		    env))))
+    (define (c2r-complex-c2mul attr* output* input* r* env)
+      (c2r-complex-cmul attr* output*
+			(list (cadr input*) (car input*))
+			r* env))
+    (define (c2r-complex-c2madd attr* output* input* r* env)
+      (c2r-complex-cmul attr* output*
+			(list (car input*) (caddr input*) (cadr input*))
+			r* env))
     (define (c2r-complex-cmadd attr* output* input* r* env)
       (if (member (car output*) (cdr input*))
 	  (c2r-split c2r-complex-cmadd attr* output* input* r* env)
@@ -497,30 +551,35 @@
 	      env)))
     (define c2r-op*
       (list
-       (cons 'complex-move           c2r-complex-move)
-       (cons 'complex                c2r-complex)
-       (cons 'complex-real           c2r-complex-real)
-       (cons 'complex-imag           c2r-complex-imag)
-       (cons 'complex-neg            c2r-complex-neg)
-       (cons 'complex-times-plus-i   c2r-complex-times-plus-i)
-       (cons 'complex-times-minus-i  c2r-complex-times-minus-i)
-       (cons 'complex-add            c2r-complex-add)
-       (cons 'complex-sub            c2r-complex-sub)
-       (cons 'complex-rmul           c2r-complex-rmul)
-       (cons 'complex-mul            c2r-complex-mul)
-       (cons 'complex-madd           c2r-complex-madd)
-       (cons 'complex-rmadd          c2r-complex-rmadd)
-       (cons 'complex-rmsub          c2r-complex-rmsub)
-       (cons 'complex-cmul           c2r-complex-cmul)
-       (cons 'complex-cmadd          c2r-complex-cmadd)
-       (cons 'complex-add-i          c2r-complex-add-i)
-       (cons 'complex-sub-i          c2r-complex-sub-i)
-       (cons 'complex-norm-init      c2r-complex-norm-init)
-       (cons 'complex-norm-add       c2r-complex-norm-add)
-       (cons 'complex-norm-fini      c2r-complex-norm-fini)
-       (cons 'complex-dot-init       c2r-complex-dot-init)
-       (cons 'complex-dot-add        c2r-complex-dot-add)
-       (cons 'complex-dot-fini       c2r-complex-dot-fini)))
+       (cons 'complex-move                   c2r-complex-move)
+       (cons 'complex                        c2r-complex)
+       (cons 'complex-real                   c2r-complex-real)
+       (cons 'complex-imag                   c2r-complex-imag)
+       (cons 'complex-neg                    c2r-complex-neg)
+       (cons 'complex-times-plus-i           c2r-complex-times-plus-i)
+       (cons 'complex-times-minus-i          c2r-complex-times-minus-i)
+       (cons 'complex-add                    c2r-complex-add)
+       (cons 'complex-sub                    c2r-complex-sub)
+       (cons 'complex-rmul                   c2r-complex-rmul)
+       (cons 'complex-mul                    c2r-complex-mul)
+       (cons 'complex-madd                   c2r-complex-madd)
+       (cons 'complex-rmadd                  c2r-complex-rmadd)
+       (cons 'complex-rmsub                  c2r-complex-rmsub)
+       (cons 'complex-cmul                   c2r-complex-cmul)
+       (cons 'complex-cmadd                  c2r-complex-cmadd)
+       (cons 'complex-c2mul                  c2r-complex-c2mul)
+       (cons 'complex-c2madd                 c2r-complex-c2madd)
+       (cons 'complex-add-i                  c2r-complex-add-i)
+       (cons 'complex-sub-i                  c2r-complex-sub-i)
+       (cons 'complex-real-cmul-conj-init    c2r-real-cmul-conj-init)
+       (cons 'complex-real-cmul-conj-add     c2r-real-cmul-conj-add)
+       (cons 'complex-real-cmul-conj-fini    c2r-real-cmul-conj-fini)
+       (cons 'complex-norm-init              c2r-complex-norm-init)
+       (cons 'complex-norm-add               c2r-complex-norm-add)
+       (cons 'complex-norm-fini              c2r-complex-norm-fini)
+       (cons 'complex-dot-init               c2r-complex-dot-init)
+       (cons 'complex-dot-add                c2r-complex-dot-add)
+       (cons 'complex-dot-fini               c2r-complex-dot-fini)))
     (define (c2r-operation c attr* name output* input* r* env)
       (cond
        [(assq name c2r-op*)

@@ -26,6 +26,7 @@ pdf: $(f.pdf)
 
 ###
 $(f.pdf): %.pdf: %.dvi
+	$(RM) $@
 	$(DVIPDFM) -o $@ $<
 
 $(f.dvi): %.dvi: %.tex

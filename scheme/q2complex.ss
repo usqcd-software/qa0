@@ -182,16 +182,76 @@
 		'projected-fermion r* env))
     (define (q2c-mulf attr* output* input* r* env)
       (q2c-mulx attr* output* input* '*fermion-dim*
-		'fermion r* env))
+		q2c-get-fermion r* env))
     (define (q2c-mulh attr* output* input* r* env)
       (q2c-mulx attr* output* input* '*projected-fermion-dim*
-		'projected-fermion r* env))
+		q2c-get-projected-fermion r* env))
     (define (q2c-mulf-conj attr* output* input* r* env)
       (q2c-mulx-conj attr* output* input* '*fermion-dim*
-		     'fermion r* env))
+		     q2c-get-fermion r* env))
     (define (q2c-mulh-conj attr* output* input* r* env)
       (q2c-mulx-conj attr* output* input* '*projected-fermion-dim*
-		     'projected-fermion r* env))
+		     q2c-get-projected-fermion r* env))
+    (define (q2c-u-mul attr* output* input* r* env)
+      (q2c-mulu attr* output* input*
+		q2c-get-gauge q2c-get-gauge
+		'complex-mul 'complex-madd
+		r* env))
+    (define (q2c-u-conj-mul attr* output* input* r* env)
+      (q2c-mulu attr* output* input*
+		q2c-get-conj-gauge q2c-get-gauge
+		'complex-cmul 'complex-cmadd
+		r* env))
+    (define (q2c-u-mul-conj attr* output* input* r* env)
+      (q2c-mulu attr* output* input*
+		q2c-get-gauge q2c-get-conj-gauge
+		'complex-c2mul 'complex-c2madd
+		r* env))
+    (define (q2c-u-conj-mul-conj attr* output* input* r* env)
+      (q2c-mulu attr* output* input*
+		q2c-get-conj-gauge q2c-get-conj-gauge
+		'complex-ccmul 'complex-ccmadd
+		r* env))
+    (define (q2c-u-retr-conj-mul attr* output* input* r* env)
+      (q2c-check-list output* 1 "qcd-su-n-real-trace-conj-mul outputs")
+      (q2c-check-list input* 2 "qcd-su-n-real-trace-conj-mul inputs")
+      (let ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
+	    [r-r (car output*)]
+	    [r-a (car input*)]
+	    [r-b (cadr input*)])
+	(define (step x y r* env q)
+	  (let-values* ([(v-a env) (q2c-get-conj-gauge r-a x y env)]
+			[(v-b env) (q2c-get-gauge r-b x y env)]
+			[(p) (make-reg (new-reg))])
+	    (values (cons (if (and (zero? x) (zero? y))
+			      (make-qa0-operation
+			       attr*
+			       'complex-real-cmul-conj-init
+			       (list p)
+			       (list (make-reg v-a) (make-reg v-b)))
+			      (make-qa0-operation
+			       attr*
+			       'complex-real-cmul-conj-add
+			       (list p)
+			       (list q (make-reg v-a) (make-reg v-b))))
+			  r*)
+		    env
+		    p)))
+	(let loop-x ([x 0] [r* r*] [env env] [q #f])
+	  (cond
+	   [(= x c-n) (values (cons (make-qa0-operation
+				     attr*
+				     'complex-real-cmul-conj-fini
+				     (list r-r)
+				     (list q))
+				    r*)
+			      env)]
+	   [else
+	    (let loop-y ([y 0] [r* r*] [env env] [q q])
+	      (cond
+	       [(= y c-n) (loop-x (+ x 1) r* env q)]
+	       [else (let-values ([(r* env q) (step x y r* env q)])
+		       (loop-y (+ y 1) r* env q))]))]))))
     (define (q2c-maddf attr* output* input* r* env)
       (q2c-maddx attr* output* input* '*fermion-dim*
 		 'all 'fermion r* env))
@@ -483,7 +543,8 @@
 		    [else (let-values*
 			      ([(r* env) (complex-msub c f s alpha a r* env)])
 			    (f-loop (+ f 1) r* env))]))]))))
-    (define (q2c-mul-g attr* output* input* f-n t op-0 op-k u-get r* env)
+    (define (q2c-mul-g attr* output* input* f-n
+		       r-get op-0 op-k u-get f-get r* env)
       (q2c-check-list output* 1 "QCD mul outputs")
       (q2c-check-list input* 2 "QCD mul inputs")
       (let ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
@@ -496,8 +557,8 @@
 	    (let loop ([f 0] [r* r*] [env env])
 	      (cond
 	       [(= f f-n) (values r* env)]
-	       [else (let-values* ([(b env) (q2c-rename env r-b t 0 f)]
-				   [(z env) (q2c-rename env r-r t 0 f)])
+	       [else (let-values* ([(b env) (f-get r-b 0 f env)]
+				   [(z env) (r-get r-r 0 f env)])
 		       (loop (+ f 1)
 			     (cons (make-qa0-operation attr*
 				     op-0
@@ -515,9 +576,9 @@
 		  (cond
 		   [(= y f-n) (x-loop (+ x 1) r* env)]
 		   [else
-		    (let-values* ([(q-v env) (q2c-rename env q t x y)]
+		    (let-values* ([(q-v env) (r-get q x y env)]
 				  [(U-v env) (u-get r-U x 0 env)]
-				  [(b-v env) (q2c-rename env r-b t 0 y)])
+				  [(b-v env) (f-get r-b 0 y env)])
 		      (y-loop (+ y 1)
 			      (cons (make-qa0-operation attr*
 				      op-0
@@ -534,10 +595,10 @@
 		(cond
 		 [(= y f-n) (x-loop (+ x 1) r* env)]
 		 [else
-		  (let-values* ([(q-v env) (q2c-rename env r-x t x y)]
-				[(r-v env) (q2c-rename env r-r t x y)]
+		  (let-values* ([(q-v env) (r-get r-x x y env)]
+				[(r-v env) (r-get r-r x y env)]
 				[(U-v env) (u-get r-U x c env)]
-				[(b-v env) (q2c-rename env r-b t c y)])
+				[(b-v env) (f-get r-b c y env)])
 		    (y-loop (+ y 1)
 			    (cons (make-qa0-operation attr*
 				    op-k
@@ -558,16 +619,25 @@
 		   (let-values* ([(r* env r-x) (s-madd-x r-x (new-reg) c
 							 r* env)])
 		     (loop (+ c 1) r* env r-x))]))))))
-    (define (q2c-mulx attr* output* input* f-n t r* env)
-      (q2c-mul-g attr* output* input* f-n t
+    (define (q2c-mulu attr* output* input* a-get b-get op-0 op-k r* env)
+      (q2c-mul-g attr* output* input* '*colors* q2c-get-gauge op-0 op-k
+		 a-get b-get r* env))
+    (define (q2c-get-fermion r i j env)
+      (q2c-rename env r 'fermion i j))
+    (define (q2c-get-projected-fermion r i j env)
+      (q2c-rename env r 'projected-fermion i j))
+    (define (q2c-get-gauge r i j env)
+      (q2c-rename env r 'gauge i j))
+    (define (q2c-get-conj-gauge r i j env)
+      (q2c-rename env r 'gauge j i))
+    (define (q2c-mulx attr* output* input* f-n f-get r* env)
+      (q2c-mul-g attr* output* input* f-n f-get
 		 'complex-mul 'complex-madd
-		 (lambda (r i j env) (q2c-rename env r 'gauge i j))
-		 r* env))
-    (define (q2c-mulx-conj attr* output* input* f-n t r* env)
-      (q2c-mul-g attr* output* input* f-n t
+		 q2c-get-gauge f-get r* env))
+    (define (q2c-mulx-conj attr* output* input* f-n f-get r* env)
+      (q2c-mul-g attr* output* input* f-n f-get
 		 'complex-cmul 'complex-cmadd
-		 (lambda (r i j env) (q2c-rename env r 'gauge j i))
-		 r* env))
+		 q2c-get-conj-gauge f-get r* env))
     (define (q2c-check-list x* size msg)
       (if (not (= (length x*) size))
 	  (s-error "ERROR: ~a" msg)))
@@ -747,6 +817,11 @@
        (cons 'qcd-mulh                      q2c-mulh)
        (cons 'qcd-mulf-conj                 q2c-mulf-conj)
        (cons 'qcd-mulh-conj                 q2c-mulh-conj)
+       (cons 'qcd-su-n-mul                  q2c-u-mul)
+       (cons 'qcd-su-n-conj-mul             q2c-u-conj-mul)
+       (cons 'qcd-su-n-mul-conj             q2c-u-mul-conj)
+       (cons 'qcd-su-n-conj-mul-conj        q2c-u-conj-mul-conj)
+       (cons 'qcd-su-n-real-trace-conj-mul  q2c-u-retr-conj-mul)
        (cons 'qcd-scaleu                    q2c-scaleu)
        (cons 'qcd-scalef                    q2c-scalef)
        (cons 'qcd-scalef-lo                 q2c-scalef-lo)

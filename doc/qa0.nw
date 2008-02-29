@@ -528,6 +528,46 @@ Compute $r\leftarrow u a$ for a projected fermion.
 Compute $r\leftarrow u^\dagger a$ for a projected fermion.
 
 \begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-su-n-mul} \terminal{()}
+   \terminal{(} $r_G$ \terminal{)}
+   \terminal{(} $u_G$  $v_G$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow u v$ for gauge fields.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-su-n-mul-conj} \terminal{()}
+   \terminal{(} $r_G$ \terminal{)}
+   \terminal{(} $u_G$  $v_G$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow u v^\dagger$ for gauge fields.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-su-n-conj-mul} \terminal{()}
+   \terminal{(} $r_G$ \terminal{)}
+   \terminal{(} $u_G$  $v_G$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow u^\dagger v$ for gauge fields.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-su-n-conj-mul-conj} \terminal{()}
+   \terminal{(} $r_G$ \terminal{)}
+   \terminal{(} $u_G$  $v_G$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow u^\dagger v^\dagger$ for gauge fields.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-su-n-real-trace-conj-mul} \terminal{()}
+   \terminal{(} $r_d$ \terminal{)}
+   \terminal{(} $b_G$ $c_G$\terminal{)}
+\terminal{)}
+\end{grammar}
+Computes $r\leftarrow \Re \mbox{Tr}(b^\dagger c)$ for gauge fields.
+
+\begin{grammar}
 \terminal{(}\terminal{op} \terminal{qcd-scaleu} \terminal{()}
    \terminal{(} $r_G$ \terminal{)}
    \terminal{(} $v_d$ $x_G$ \terminal{)}
@@ -899,33 +939,15 @@ Compute $r\leftarrow -a$.
 \end{grammar}
 Compute $r\leftarrow a$.
 
-\begin{grammar}
-\terminal{(}\terminal{op} \terminal{complex-}
-     \terminal{(} \terminal{)}
-   \terminal{(} $a_c$ \terminal{)}
-   \terminal{(} $b_c$ $c_c$ \terminal{)}
-\terminal{)}
-\end{grammar}
-Compute $r\leftarrow a ? b$.
-
-\begin{grammar}
-\terminal{(}\terminal{op} \terminal{complex-}
-     \terminal{(} \terminal{)}
-   \terminal{(} $a_c$ \terminal{)}
-   \terminal{(} $b_c$ $c_c$ \terminal{)}
-\terminal{)}
-\end{grammar}
-Compute $r\leftarrow a ? b$.
-
-\begin{grammar}
-\terminal{(}\terminal{op} \terminal{complex-}
-     \terminal{(} \terminal{)}
-   \terminal{(} $a_c$ \terminal{)}
-   \terminal{(} $b_c$ $c_c$ \terminal{)}
-\terminal{)}
-\end{grammar}
-Compute $r\leftarrow a ? b$.
-
+%\begin{grammar}
+%\terminal{(}\terminal{op} \terminal{complex-}
+%     \terminal{(} \terminal{)}
+%   \terminal{(} $a_c$ \terminal{)}
+%   \terminal{(} $b_c$ $c_c$ \terminal{)}
+%\terminal{)}
+%\end{grammar}
+%Compute $r\leftarrow a ? b$.
+%
 \begin{grammar}
 \terminal{(}\terminal{op} \terminal{complex}
      \terminal{(} \terminal{)}
@@ -955,17 +977,16 @@ Compute $r\leftarrow \Im a$.
 
 \begin{grammar}
 \terminal{(}\terminal{op} \terminal{complex-norm-init}
-     \terminal{(} \terminal{[} \terminal{project} $d$ $s$
-     \terminal{]} \terminal{)}
+     \terminal{()}
    \terminal{(} $r_x$ \terminal{)}
+   \terminal{()}
 \terminal{)}
 \end{grammar}
 Prepare to compute complex norm squared.
 
 \begin{grammar}
 \terminal{(}\terminal{op} \terminal{complex-norm-add}
-     \terminal{(} \terminal{[} \terminal{project} $d$ $s$
-     \terminal{]} \terminal{)}
+     \terminal{()}
    \terminal{(} $r_x$ \terminal{)}
    \terminal{(} $a_x$ $b_c$ \terminal{)}
 \terminal{)}
@@ -974,8 +995,7 @@ Add an element to the complex norm $r\leftarrow a + b^{*}b$.
 
 \begin{grammar}
 \terminal{(}\terminal{op} \terminal{complex-norm-fini}
-     \terminal{(} \terminal{[} \terminal{project} $d$ $s$
-     \terminal{]} \terminal{)}
+     \terminal{()}
    \terminal{(} $r_d$ \terminal{)}
    \terminal{(} $a_x$ \terminal{)}
 \terminal{)}
@@ -984,17 +1004,16 @@ Extract the value for the norm $r\leftarrow a$.
 
 \begin{grammar}
 \terminal{(}\terminal{op} \terminal{complex-dot-init}
-     \terminal{(} \terminal{[} \terminal{project} $d$ $s$
-     \terminal{]} \terminal{)}
+     \terminal{()}
    \terminal{(} $r_y$ \terminal{)}
+   \terminal{()}
 \terminal{)}
 \end{grammar}
 Prepare to compute complex dot product squared.
 
 \begin{grammar}
 \terminal{(}\terminal{op} \terminal{complex-dot-add}
-     \terminal{(} \terminal{[} \terminal{project} $d$ $s$
-     \terminal{]} \terminal{)}
+   \terminal{()}
    \terminal{(} $r_x$ \terminal{)}
    \terminal{(} $a_x$ $b_c$ $c_c$\terminal{)}
 \terminal{)}
@@ -1003,13 +1022,41 @@ Add an element to the complex dot product $r\leftarrow a + b^{*}c$.
 
 \begin{grammar}
 \terminal{(}\terminal{op} \terminal{complex-dot-fini}
-     \terminal{(} \terminal{[} \terminal{project} $d$ $s$
-     \terminal{]} \terminal{)}
+     \terminal{()}
    \terminal{(} $r_c$ \terminal{)}
    \terminal{(} $a_x$ \terminal{)}
 \terminal{)}
 \end{grammar}
 Extract the value for the dot product $r\leftarrow a$.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{complex-real-cmul-conj-init}
+     \terminal{()}
+   \terminal{(} $r_q$ \terminal{)}
+   \terminal{(} $a_c$ $b_c$\terminal{)}
+\terminal{)}
+\end{grammar}
+Start computing $\sum \Re (x_i^{*} y_i)$:
+computes $r\leftarrow \Re (b^{*} c)$ but keeps $r$ in an internal form.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{complex-real-cmul-conj-add}
+     \terminal{()}
+   \terminal{(} $r_q$ \terminal{)}
+   \terminal{(} $a_q$ $b_c$ $c_c$\terminal{)}
+\terminal{)}
+\end{grammar}
+Continues computing $\sum\Re(x_i^{*}y_i)$, keeps $r$ in the internal form
+Computes $r\leftarrow a + \Re (b^{*} c)$.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{complex-real-cmul-conj-fini}
+     \terminal{()}
+   \terminal{(} $r_d$ \terminal{)}
+   \terminal{(} $a_q$ {)}
+\terminal{)}
+\end{grammar}
+Finishes computing $r=\sum\Re(x_i^{*}y_i)$, extracts $r$ from the internal form.
 
 \subsection{Real operations}
 \begin{grammar}
