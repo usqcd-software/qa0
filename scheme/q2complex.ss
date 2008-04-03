@@ -297,7 +297,13 @@
 					input*)
 		    r*)
 	      env))
+    (define (q2c-fnorm-lo-add attr* output* input* r* env)
+       (q2c-fnorm-add-do attr* output* input* r* env 'low))
+    (define (q2c-fnorm-hi-add attr* output* input* r* env)
+       (q2c-fnorm-add-do attr* output* input* r* env 'high))
     (define (q2c-fnorm-add attr* output* input* r* env)
+       (q2c-fnorm-add-do attr* output* input* r* env 'all))
+    (define (q2c-fnorm-add-do attr* output* input* r* env part)
       (define (complex-norm c f r* env)
 	(let-values* ([(a env) (q2c-rename env (cadr input*) 'fermion c f)])
 		     (values (cons (make-qa0-operation attr*
@@ -309,13 +315,15 @@
       (q2c-check-list output* 1 "QCD fermion norm add outputs")
       (q2c-check-list input* 2 "QCD fermion norm add inputs")
       (let ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	    [f-n (ce-lookup-x env 'const '*fermion-dim* "Fermion dimension")])
+	    [f-n (ce-lookup-x env 'const '*fermion-dim* "Fermion dimension")]
+	    [f-lo (if (eq? part 'high) (/ f-n 2) 0)]
+	    [f-hi (if (eq? part 'low) (/ f-n 2) f-n)])
 	(let c-loop ([c 0] [r* r*] [env env])
 	  (cond
 	   [(= c c-n) (values r* env)]
-	   [else (let f-loop ([f 0] [r* r*] [env env])
+	   [else (let f-loop ([f f-lo] [r* r*] [env env])
 		   (cond
-		    [(= f f-n) (c-loop (+ c 1) r* env)]
+		    [(= f f-hi) (c-loop (+ c 1) r* env)]
 		    [else (let-values* ([(r* env) (complex-norm c f r* env)])
 			    (f-loop (+ f 1) r* env))]))]))))
     (define (q2c-fnorm-fini attr* output* input* r* env)
@@ -841,6 +849,8 @@
        (cons 'qcd-msub-lohi                 q2c-msub-lohi)
        (cons 'qcd-fnorm-init                q2c-fnorm-init)
        (cons 'qcd-fnorm-add                 q2c-fnorm-add)
+       (cons 'qcd-fnorm-lo-add              q2c-fnorm-lo-add)
+       (cons 'qcd-fnorm-hi-add              q2c-fnorm-hi-add)
        (cons 'qcd-fnorm-fini                q2c-fnorm-fini)
        (cons 'qcd-fdot-init                 q2c-fdot-init)
        (cons 'qcd-fdot-add                  q2c-fdot-add)
