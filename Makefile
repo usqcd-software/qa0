@@ -6,7 +6,7 @@ bindir = $(prefix)/bin
 docdir = $(prefix)/share/doc/$(VERSION)
 
 SUBDIRS = scheme bootstrap doc
-VERSION = qa0-1.0.3
+VERSION = qa0-1.1.0
 DOCS    =  doc/qa0.pdf README COPYRIGHT AUTHORS
 
 .PHONY: all dist clean realclean install install-doc tar
@@ -25,14 +25,16 @@ dist:
 
 install: all install-doc
 	[ -d $(bindir) ] || mkdir -p $(bindir)
+	rm -f $(bindir)/qa0
 	cp bootstrap/qa0 $(bindir)/
 	chmod -w $(bindir)/qa0
 
 install-doc:
 	[ -d $(docdir) ] || mkdir -p $(docdir)
 	for f in $(DOCS); do \
+	   rm -f $(docdir)/`basename $$f`; \
 	   cp $$f $(docdir)/ ; \
-	   chmod -w $$f; \
+	   chmod -w $(docdir)/`basename $$f`; \
 	done
 
 tar: realclean

@@ -682,7 +682,7 @@ Add a fermion to the norm computation, $r\leftarrow a + b^\dagger b$.
 \terminal{)}
 \end{grammar}
 Add low part of a fermion to the norm computation,
- $r\leftarrow a + lo(b)^lo(\dagger b)$.
+ $r\leftarrow a + lo(b)^\dagger lo(b)$.
 
 \begin{grammar}
 \terminal{(}\terminal{op} \terminal{qcd-fnorm-hi-add} \terminal{()}
@@ -691,7 +691,7 @@ Add low part of a fermion to the norm computation,
 \terminal{)}
 \end{grammar}
 Add high part of a fermion to the norm computation,
- $r\leftarrow a + hi(b)^hi(\dagger b)$.
+ $r\leftarrow a + hi(b)^\dagger hi(b)$.
 
 \begin{grammar}
 \terminal{(}\terminal{op} \terminal{qcd-fnorm-fini} \terminal{()}
