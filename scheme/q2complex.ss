@@ -314,10 +314,10 @@
 			     env)))
       (q2c-check-list output* 1 "QCD fermion norm add outputs")
       (q2c-check-list input* 2 "QCD fermion norm add inputs")
-      (let ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	    [f-n (ce-lookup-x env 'const '*fermion-dim* "Fermion dimension")]
-	    [f-lo (if (eq? part 'high) (/ f-n 2) 0)]
-	    [f-hi (if (eq? part 'low) (/ f-n 2) f-n)])
+      (let* ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
+	     [f-n (ce-lookup-x env 'const '*fermion-dim* "Fermion dimension")]
+	     [f-lo (if (eq? part 'high) (/ f-n 2) 0)]
+	     [f-hi (if (eq? part 'low) (/ f-n 2) f-n)])
 	(let c-loop ([c 0] [r* r*] [env env])
 	  (cond
 	   [(= c c-n) (values r* env)]
