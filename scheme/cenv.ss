@@ -14,6 +14,7 @@
 ;; (provide ce-search-x)
 ;; (provide ce-lookup)
 ;; (provide ce-lookup-x)
+;; (provide ce-resolve-const)
 ;; (provide ce-bind)
 ;; (provide ce-bind-x)
 ;; (provide ce-add-param)
@@ -55,6 +56,11 @@
      (ce-search env (list type key) (lambda (x) x)
 		(lambda ()
 		  (ic-error 'ce-lookup-x msg arg ...)))]))
+(define-syntax ce-resolve-const
+  (syntax-rules ()
+    [(_ env key msg arg ...)
+     (if (number? key) key
+	 (ce-lookup-x env 'const key msg arg ...))]))
 (define (ce-bind env k v) (ce-extend env k v))
 (define (ce-bind-x env t k v) (ce-extend env (list t k) v))
 (define (ce-add-param env name value)
@@ -169,8 +175,8 @@
 (define (ce-add-qcd-type env name c-name a-dim b-dim)
   (let ([c-size (ce-lookup-x env 'size-of 'COMPLEX "(size-of COMPLEX)")]
 	[c-align (ce-lookup-x env 'align-of 'COMPLEX "(align-of COMPLEX)")]
-	[a-size (ce-lookup-x env 'const a-dim "(const ~a)" a-dim)]
-	[b-size (ce-lookup-x env 'const b-dim "(const ~a)" b-dim)])
+	[a-size (ce-resolve-const env a-dim "(const ~a)" a-dim)]
+	[b-size (ce-resolve-const env b-dim "(const ~a)" b-dim)])
     (ce-add-type env name c-name (* a-size b-size c-size) c-align)))
 
 (define (ce-bgl env)

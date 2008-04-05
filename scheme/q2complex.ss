@@ -69,9 +69,12 @@
     (define (q2c-store-projected-fermion attr* addr* value r* env)
       (q2c-store-xy attr* addr* value '*colors* '*projected-fermion-dim*
 		    'all 'projected-fermion r* env))
+    (define (q2c-store-staggered-fermion attr* addr* value r* env)
+      (q2c-store-xy attr* addr* value '*colors* 1
+		    'all 'staggered-fermion r* env))
     (define (q2c-store-xy attr* addr* value c-n f-n part t r* env)
-      (let* ([c-n (ce-lookup-x env 'const c-n "Color count")]
-	     [f-n (ce-lookup-x env 'const f-n "Fermion size")]
+      (let* ([c-n (ce-resolve-const env c-n "Color count")]
+	     [f-n (ce-resolve-const env f-n "Fermion size")]
 	     [f-lo (if (eq? part 'high) (/ f-n 2) 0)]
 	     [f-hi (if (eq? part 'low) (/ f-n 2) f-n)])
 	(define (c-store c f r* env)
@@ -102,6 +105,7 @@
        (cons 'qcd-fermion            q2c-store-fermion)
        (cons 'qcd-fermion-lo         q2c-store-fermion-lo)
        (cons 'qcd-fermion-hi         q2c-store-fermion-hi)
+       (cons 'qcd-staggered-fermion  q2c-store-staggered-fermion)
        (cons 'qcd-projected-fermion  q2c-store-projected-fermion)))
     (define (q2c-store c attr* type addr* value r* env)
       (cond
@@ -120,12 +124,15 @@
     (define (q2c-load-fermion-hi attr* output addr* r* env)
       (q2c-load-xy attr* output addr* '*colors* '*fermion-dim*
 		   'high 'fermion r* env))
+    (define (q2c-load-staggered-fermion attr* output addr* r* env)
+      (q2c-load-xy attr* output addr* '*colors* 1
+		   'all 'staggered-fermion r* env))
     (define (q2c-load-projected-fermion attr* output addr* r* env)
       (q2c-load-xy attr* output addr* '*colors* '*projected-fermion-dim*
 		   'all 'projected-fermion r* env))
     (define (q2c-load-xy attr* output addr* c-n f-n part t r* env)
-      (let* ([c-n (ce-lookup-x env 'const c-n "Color count")]
-	     [f-n (ce-lookup-x env 'const f-n "Fermion size")]
+      (let* ([c-n (ce-resolve-const env c-n "Color count")]
+	     [f-n (ce-resolve-const env f-n "Fermion size")]
 	     [f-lo (if (eq? part 'high) (/ f-n 2) 0)]
 	     [f-hi (if (eq? part 'low) (/ f-n 2) f-n)])
 	(define (c-load c f r* env)
@@ -154,6 +161,7 @@
       (list
        (cons 'qcd-su-n                q2c-load-su-n)
        (cons 'qcd-projected-fermion   q2c-load-projected-fermion)
+       (cons 'qcd-staggered-fermion   q2c-load-staggered-fermion)
        (cons 'qcd-fermion             q2c-load-fermion)
        (cons 'qcd-fermion-lo          q2c-load-fermion-lo)
        (cons 'qcd-fermion-hi          q2c-load-fermion-hi)))
@@ -171,6 +179,13 @@
     (define (q2c-projected-fermion-offset attr* output* input* r* env)
       (q2c-offset attr* output* input* '*colors* '*projected-fermion-dim*
 		  'projected-fermion r* env))
+    (define (q2c-staggered-fermion-offset attr* output* input* r* env)
+      (let* ([d-n (ce-lookup-x env 'size-of 'COMPLEX "complex size")]
+	     [c   (car input*)] [r (car output*)])
+	(values (list* (make-qa0-operation '() 'int-mul (list r)
+					   (list c (make-c-expr-number d-n)))
+		       r*)
+		env)))
     (define (q2c-addu attr* output* input* r* env)
       (q2c-addx attr* output* input* '*colors*
 		'gauge r* env))
@@ -180,18 +195,27 @@
     (define (q2c-addh attr* output* input* r* env)
       (q2c-addx attr* output* input* '*projected-fermion-dim*
 		'projected-fermion r* env))
+    (define (q2c-adds attr* output* input* r* env)
+      (q2c-addx attr* output* input* 1
+		'staggered-fermion r* env))
     (define (q2c-mulf attr* output* input* r* env)
       (q2c-mulx attr* output* input* '*fermion-dim*
 		q2c-get-fermion r* env))
     (define (q2c-mulh attr* output* input* r* env)
       (q2c-mulx attr* output* input* '*projected-fermion-dim*
 		q2c-get-projected-fermion r* env))
+    (define (q2c-muls attr* output* input* r* env)
+      (q2c-mulx attr* output* input* 1
+		q2c-get-staggered-fermion r* env))
     (define (q2c-mulf-conj attr* output* input* r* env)
       (q2c-mulx-conj attr* output* input* '*fermion-dim*
 		     q2c-get-fermion r* env))
     (define (q2c-mulh-conj attr* output* input* r* env)
       (q2c-mulx-conj attr* output* input* '*projected-fermion-dim*
 		     q2c-get-projected-fermion r* env))
+    (define (q2c-muls-conj attr* output* input* r* env)
+      (q2c-mulx-conj attr* output* input* 1
+		     q2c-get-staggered-fermion r* env))
     (define (q2c-u-mul attr* output* input* r* env)
       (q2c-mulu attr* output* input*
 		q2c-get-gauge q2c-get-gauge
@@ -215,7 +239,7 @@
     (define (q2c-u-retr-conj-mul attr* output* input* r* env)
       (q2c-check-list output* 1 "qcd-su-n-real-trace-conj-mul outputs")
       (q2c-check-list input* 2 "qcd-su-n-real-trace-conj-mul inputs")
-      (let ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
+      (let ([c-n (ce-resolve-const env '*colors* "Color count")]
 	    [r-r (car output*)]
 	    [r-a (car input*)]
 	    [r-b (cadr input*)])
@@ -261,6 +285,12 @@
     (define (q2c-maddf-hi attr* output* input* r* env)
       (q2c-maddx attr* output* input* '*fermion-dim*
 		 'high 'fermion r* env))
+    (define (q2c-maddh attr* output* input* r* env)
+      (q2c-maddx attr* output* input* '*projected-fermion-dim*
+		 'all 'projected-fermion r* env))
+    (define (q2c-madds attr* output* input* r* env)
+      (q2c-maddx attr* output* input* 1
+		 'all 'staggered-fermion r* env))
     (define (q2c-msubf attr* output* input* r* env)
       (q2c-msubx attr* output* input* '*fermion-dim*
 		 'all 'fermion r* env))
@@ -270,9 +300,12 @@
     (define (q2c-msubf-hi attr* output* input* r* env)
       (q2c-msubx attr* output* input* '*fermion-dim*
 		 'high 'fermion r* env))
-    (define (q2c-maddh attr* output* input* r* env)
-      (q2c-maddx attr* output* input* '*projected-fermion-dim*
+    (define (q2c-msubh attr* output* input* r* env)
+      (q2c-msubx attr* output* input* '*projected-fermion-dim*
 		 'all 'projected-fermion r* env))
+    (define (q2c-msubs attr* output* input* r* env)
+      (q2c-msubx attr* output* input* 1
+		 'all 'staggered-fermion r* env))
     (define (q2c-scaleu attr* output* input* r* env)
       (q2c-scalex attr* output* input* '*colors*
 		  'all 'gauge r* env))
@@ -288,6 +321,9 @@
     (define (q2c-scaleh attr* output* input* r* env)
       (q2c-scalex attr* output* input* '*projected-fermion-dim*
 		  'all 'projected-fermion r* env))
+    (define (q2c-scales attr* output* input* r* env)
+      (q2c-scalex attr* output* input* 1
+		  'all 'staggered-fermion r* env))
     (define (q2c-fnorm-init attr* output* input* r* env)
       (q2c-check-list output* 1 "QCD fermion norm init outputs")
       (q2c-check-list input* 0 "QCD fermion norm init inputs")
@@ -297,15 +333,28 @@
 					input*)
 		    r*)
 	      env))
+    (define (q2c-snorm-init attr* output* input* r* env)
+      (q2c-check-list output* 1 "QCD staggered fermion norm init outputs")
+      (q2c-check-list input* 0 "QCD staggered fermion norm init inputs")
+      (values (cons (make-qa0-operation attr*
+					'complex-norm-init
+					output*
+					input*)
+		    r*)
+	      env))
     (define (q2c-fnorm-lo-add attr* output* input* r* env)
-       (q2c-fnorm-add-do attr* output* input* r* env 'low))
+      (q2c-xnorm-add-do attr* output* input* r* env 'low '*fermion-dim*))
     (define (q2c-fnorm-hi-add attr* output* input* r* env)
-       (q2c-fnorm-add-do attr* output* input* r* env 'high))
+      (q2c-xnorm-add-do attr* output* input* r* env 'high '*fermion-dim*))
     (define (q2c-fnorm-add attr* output* input* r* env)
-       (q2c-fnorm-add-do attr* output* input* r* env 'all))
-    (define (q2c-fnorm-add-do attr* output* input* r* env part)
+      (q2c-xnorm-add-do attr* output* input* r* env
+			'all '*fermion-dim* 'fermion))
+    (define (q2c-snorm-add attr* output* input* r* env)
+      (q2c-xnorm-add-do attr* output* input* r* env
+			'all 1 'staggered-fermion))
+    (define (q2c-xnorm-add-do attr* output* input* r* env part f-dim f-kind)
       (define (complex-norm c f r* env)
-	(let-values* ([(a env) (q2c-rename env (cadr input*) 'fermion c f)])
+	(let-values* ([(a env) (q2c-rename env (cadr input*) f-kind c f)])
 		     (values (cons (make-qa0-operation attr*
 				     'complex-norm-add
 				     output*
@@ -314,8 +363,8 @@
 			     env)))
       (q2c-check-list output* 1 "QCD fermion norm add outputs")
       (q2c-check-list input* 2 "QCD fermion norm add inputs")
-      (let* ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	     [f-n (ce-lookup-x env 'const '*fermion-dim* "Fermion dimension")]
+      (let* ([c-n (ce-resolve-const env '*colors* "Color count")]
+	     [f-n (ce-resolve-const env f-dim "Fermion dimension")]
 	     [f-lo (if (eq? part 'high) (/ f-n 2) 0)]
 	     [f-hi (if (eq? part 'low) (/ f-n 2) f-n)])
 	(let c-loop ([c 0] [r* r*] [env env])
@@ -332,16 +381,32 @@
       (values (cons (make-qa0-operation attr* 'complex-norm-fini output* input*)
 		    r*)
 	      env))
+    (define (q2c-snorm-fini attr* output* input* r* env)
+      (q2c-check-list output* 1 "QCD staggered fermion norm fini outputs")
+      (q2c-check-list input* 1 "QCD staggered fermion norm fini inputs")
+      (values (cons (make-qa0-operation attr* 'complex-norm-fini output* input*)
+		    r*)
+	      env))
     (define (q2c-fdot-init attr* output* input* r* env)
       (q2c-check-list output* 1 "QCD fermion dot init outputs")
       (q2c-check-list input* 0 "QCD fermion dot init inputs")
       (values (cons (make-qa0-operation attr* 'complex-dot-init output* input*)
 		    r*)
 	      env))
+    (define (q2c-sdot-init attr* output* input* r* env)
+      (q2c-check-list output* 1 "QCD staggered fermion dot init outputs")
+      (q2c-check-list input* 0 "QCD staggered fermion dot init inputs")
+      (values (cons (make-qa0-operation attr* 'complex-dot-init output* input*)
+		    r*)
+	      env))
     (define (q2c-fdot-add attr* output* input* r* env)
+      (q2c-xdot-add-do attr* output* input* r* env '*fermion-dim* 'fermion))
+    (define (q2c-sdot-add attr* output* input* r* env)
+      (q2c-xdot-add-do attr* output* input* r* env 1 'staggered-fermion))
+    (define (q2c-xdot-add-do attr* output* input* r* env f-dim f-kind)
       (define (complex-dot c f r* env)
-	(let-values* ([(a env) (q2c-rename env (cadr input*) 'fermion c f)]
-		      [(b env) (q2c-rename env (caddr input*) 'fermion c f)])
+	(let-values* ([(a env) (q2c-rename env (cadr input*) f-kind c f)]
+		      [(b env) (q2c-rename env (caddr input*) f-kind c f)])
 	  (values (cons (make-qa0-operation attr*
 			  'complex-cmadd
 			  output* (list (car input*) (make-reg a) (make-reg b)))
@@ -349,8 +414,8 @@
 		  env)))
       (q2c-check-list output* 1 "QCD fermion dot add outputs")
       (q2c-check-list input* 3 "QCD fermion dot add inputs")
-      (let ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	    [f-n (ce-lookup-x env 'const '*fermion-dim* "Fermion dimension")])
+      (let ([c-n (ce-resolve-const env '*colors* "Color count")]
+	    [f-n (ce-resolve-const env f-dim "Fermion dimension")])
 	(let c-loop ([c 0] [r* r*] [env env])
 	  (cond
 	   [(= c c-n) (values r* env)]
@@ -365,9 +430,15 @@
       (values (cons (make-qa0-operation attr* 'complex-dot-fini output* input*)
 		    r*)
 	      env))
+    (define (q2c-sdot-fini attr* output* input* r* env)
+      (q2c-check-list output* 1 "QCD staggered fermion dot fini outputs")
+      (q2c-check-list input* 1 "QCD staggered fermion dot fini inputs")
+      (values (cons (make-qa0-operation attr* 'complex-dot-fini output* input*)
+		    r*)
+	      env))
     (define (q2c-offset attr* output* input* c-n f-n t r* env)
-      (let* ([c-n (ce-lookup-x env 'const c-n "Color count")]
-	     [f-n (ce-lookup-x env 'const f-n "Fermion size")]
+      (let* ([c-n (ce-resolve-const env c-n "Color count")]
+	     [f-n (ce-resolve-const env f-n "Fermion size")]
 	     [d-n (ce-lookup-x env 'size-of 'COMPLEX "complex size")]
 	     [c   (car input*)] [f (cadr input*)] [r (car output*)]
 	     [r0  (make-reg (new-reg))] [m0 (* d-n f-n)]
@@ -392,8 +463,8 @@
 			     env)))
       (q2c-check-list output* 1 "QCD add outputs")
       (q2c-check-list input* 2 "QCD add inputs")
-      (let ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	    [f-n (ce-lookup-x env 'const f-n "Field dimension")])
+      (let ([c-n (ce-resolve-const env '*colors* "Color count")]
+	    [f-n (ce-resolve-const env f-n "Field dimension")])
 	(let c-loop ([c 0] [r* r*] [env env])
 	  (cond
 	   [(= c c-n) (values r* env)]
@@ -415,8 +486,8 @@
 		  env)))
       (q2c-check-list output* 1 "QCD add outputs")
       (q2c-check-list input* 2 "QCD add inputs")
-      (let* ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	     [f-n (ce-lookup-x env 'const f-n "Field dimension")]
+      (let* ([c-n (ce-resolve-const env '*colors* "Color count")]
+	     [f-n (ce-resolve-const env f-n "Field dimension")]
 	     [f-lo (if (eq? part 'high) (/ f-n 2) 0)]
 	     [f-hi (if (eq? part 'low) (/ f-n 2) f-n)])
 	(let c-loop ([c 0] [r* r*] [env env])
@@ -441,8 +512,8 @@
 		    env)))
 	(q2c-check-list output* 1 "QCD madd-lohi outputs")
 	(q2c-check-list input* 5 "QCD madd-lohi inputs")
-	(let* ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	       [f-n (ce-lookup-x env 'const '*fermion-dim* "Field dimension")]
+	(let* ([c-n (ce-resolve-const env '*colors* "Color count")]
+	       [f-n (ce-resolve-const env '*fermion-dim* "Field dimension")]
 	       [f-m (/ f-n 2)]
 	       [s  (car input*)]
 	       [alpha (cadr input*)] [a (caddr input*)]
@@ -474,8 +545,8 @@
 		    env)))
 	(q2c-check-list output* 1 "QCD msub-lohi outputs")
 	(q2c-check-list input* 5 "QCD msub-lohi inputs")
-	(let* ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	       [f-n (ce-lookup-x env 'const '*fermion-dim* "Field dimension")]
+	(let* ([c-n (ce-resolve-const env '*colors* "Color count")]
+	       [f-n (ce-resolve-const env '*fermion-dim* "Field dimension")]
 	       [f-m (/ f-n 2)]
 	       [s  (car input*)]
 	       [alpha (cadr input*)] [a (caddr input*)]
@@ -506,8 +577,8 @@
 		  env)))
       (q2c-check-list output* 1 "QCD madd outputs")
       (q2c-check-list input* 3 "QCD madd inputs")
-      (let* ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	     [f-n (ce-lookup-x env 'const f-n "Field dimension")]
+      (let* ([c-n (ce-resolve-const env '*colors* "Color count")]
+	     [f-n (ce-resolve-const env f-n "Field dimension")]
 	     [f-lo (if (eq? part 'high) (/ f-n 2) 0)]
 	     [f-hi (if (eq? part 'low) (/ f-n 2) f-n)]
 	     [a  (car input*)]
@@ -535,8 +606,8 @@
 		  env)))
       (q2c-check-list output* 1 "QCD msub outputs")
       (q2c-check-list input* 3 "QCD msub inputs")
-      (let* ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	     [f-n (ce-lookup-x env 'const f-n "Field dimension")]
+      (let* ([c-n (ce-resolve-const env '*colors* "Color count")]
+	     [f-n (ce-resolve-const env f-n "Field dimension")]
 	     [f-lo (if (eq? part 'high) (/ f-n 2) 0)]
 	     [f-hi (if (eq? part 'low) (/ f-n 2) f-n)]
 	     [a  (car input*)]
@@ -555,8 +626,8 @@
 		       r-get op-0 op-k u-get f-get r* env)
       (q2c-check-list output* 1 "QCD mul outputs")
       (q2c-check-list input* 2 "QCD mul inputs")
-      (let ([c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	    [f-n (ce-lookup-x env 'const f-n "Field dimension")]
+      (let ([c-n (ce-resolve-const env '*colors* "Color count")]
+	    [f-n (ce-resolve-const env f-n "Field dimension")]
 	    [r-U (car input*)]
 	    [r-b (cadr input*)]
 	    [r-r (car output*)])
@@ -634,6 +705,8 @@
       (q2c-rename env r 'fermion i j))
     (define (q2c-get-projected-fermion r i j env)
       (q2c-rename env r 'projected-fermion i j))
+    (define (q2c-get-staggered-fermion r i j env)
+      (q2c-rename env r 'staggered-fermion i j))
     (define (q2c-get-gauge r i j env)
       (q2c-rename env r 'gauge i j))
     (define (q2c-get-conj-gauge r i j env)
@@ -664,8 +737,8 @@
       (let* ([kind (attr-lookup attr* 'project "qcd-project")]
 	     [op* (ce-lookup env (cons 'project kind)
 			     "project op-table for ~a" kind)]
-	     [c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	     [h-n (/ (ce-lookup-x env 'const '*fermion-dim* "Fermion dim") 2)]
+	     [c-n (ce-resolve-const env '*colors* "Color count")]
+	     [h-n (/ (ce-resolve-const env '*fermion-dim* "Fermion dim") 2)]
 	     [r-r (car output*)]
 	     [r-a (car input*)])
 	(define (proj c h op r* env)
@@ -706,8 +779,8 @@
       (let* ([kind (attr-lookup attr* 'unproject "qcd-unproject")]
 	     [op* (ce-lookup env (cons 'unproject kind)
 			     "unproj op-table for ~a" kind)]
-	     [c-n (ce-lookup-x env 'const '*colors* "Color count")]
-	     [f-n (ce-lookup-x env 'const '*fermion-dim* "Fermion dim")]
+	     [c-n (ce-resolve-const env '*colors* "Color count")]
+	     [f-n (ce-resolve-const env '*fermion-dim* "Fermion dim")]
 	     [r-r (car output*)]
 	     [r-a (car input*)])
 	(define (unproj c f op r* env)
@@ -743,7 +816,7 @@
       (let* ([kind (attr-lookup attr* 'unproject "qcd-unproject-add")]
 	     [op* (ce-lookup env (cons 'unproject kind)
 			     "unproj op-table for ~a" kind)]
-	     [c-n (ce-lookup-x env 'const '*colors* "Color count")]
+	     [c-n (ce-resolve-const env '*colors* "Color count")]
 	     [r-r (car output*)]
 	     [r-a (car input*)]
 	     [r-b (cadr input*)])
@@ -782,7 +855,7 @@
       (let* ([kind (attr-lookup attr* 'unproject "qcd-unproject-sub")]
 	     [op* (ce-lookup env (cons 'unproject kind)
 			     "unproj op-table for ~a" kind)]
-	     [c-n (ce-lookup-x env 'const '*colors* "Color count")]
+	     [c-n (ce-resolve-const env '*colors* "Color count")]
 	     [r-r (car output*)]
 	     [r-a (car input*)]
 	     [r-b (cadr input*)])
@@ -823,8 +896,10 @@
        (cons 'qcd-unproject-sub             q2c-unproject-sub)
        (cons 'qcd-mulf                      q2c-mulf)
        (cons 'qcd-mulh                      q2c-mulh)
+       (cons 'qcd-muls                      q2c-muls)
        (cons 'qcd-mulf-conj                 q2c-mulf-conj)
        (cons 'qcd-mulh-conj                 q2c-mulh-conj)
+       (cons 'qcd-muls-conj                 q2c-muls-conj)
        (cons 'qcd-su-n-mul                  q2c-u-mul)
        (cons 'qcd-su-n-conj-mul             q2c-u-conj-mul)
        (cons 'qcd-su-n-mul-conj             q2c-u-mul-conj)
@@ -835,28 +910,40 @@
        (cons 'qcd-scalef-lo                 q2c-scalef-lo)
        (cons 'qcd-scalef-hi                 q2c-scalef-hi)
        (cons 'qcd-scaleh                    q2c-scaleh)
+       (cons 'qcd-scales                    q2c-scales)
        (cons 'qcd-addu                      q2c-addu)
        (cons 'qcd-addf                      q2c-addf)
        (cons 'qcd-addh                      q2c-addh)
+       (cons 'qcd-adds                      q2c-adds)
        (cons 'qcd-maddf                     q2c-maddf)
        (cons 'qcd-maddf-lo                  q2c-maddf-lo)
        (cons 'qcd-maddf-hi                  q2c-maddf-hi)
+       (cons 'qcd-madd-lohi                 q2c-madd-lohi)
+       (cons 'qcd-maddh                     q2c-maddh)
+       (cons 'qcd-madds                     q2c-madds)
        (cons 'qcd-msubf                     q2c-msubf)
        (cons 'qcd-msubf-lo                  q2c-msubf-lo)
        (cons 'qcd-msubf-hi                  q2c-msubf-hi)
-       (cons 'qcd-maddh                     q2c-maddh)
-       (cons 'qcd-madd-lohi                 q2c-madd-lohi)
+       (cons 'qcd-msubh                     q2c-msubh)
+       (cons 'qcd-msubs                     q2c-msubs)
        (cons 'qcd-msub-lohi                 q2c-msub-lohi)
        (cons 'qcd-fnorm-init                q2c-fnorm-init)
        (cons 'qcd-fnorm-add                 q2c-fnorm-add)
        (cons 'qcd-fnorm-lo-add              q2c-fnorm-lo-add)
        (cons 'qcd-fnorm-hi-add              q2c-fnorm-hi-add)
        (cons 'qcd-fnorm-fini                q2c-fnorm-fini)
+       (cons 'qcd-snorm-init                q2c-snorm-init)
+       (cons 'qcd-snorm-add                 q2c-snorm-add)
+       (cons 'qcd-snorm-fini                q2c-snorm-fini)
        (cons 'qcd-fdot-init                 q2c-fdot-init)
        (cons 'qcd-fdot-add                  q2c-fdot-add)
        (cons 'qcd-fdot-fini                 q2c-fdot-fini)
+       (cons 'qcd-sdot-init                 q2c-sdot-init)
+       (cons 'qcd-sdot-add                  q2c-sdot-add)
+       (cons 'qcd-sdot-fini                 q2c-sdot-fini)
        (cons 'qcd-su-n-offset               q2c-su-n-offset)
        (cons 'qcd-fermion-offset            q2c-fermion-offset)
+       (cons 'qcd-staggered-fermion-offset  q2c-staggered-fermion-offset)
        (cons 'qcd-projected-fermion-offset  q2c-projected-fermion-offset)))
     (define (q2c-operation c attr* name output* input* r* env)
       (cond

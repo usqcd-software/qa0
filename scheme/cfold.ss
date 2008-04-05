@@ -43,6 +43,8 @@
 			      mdwf-start-sum-direction)]
 	   [env (ce-add-qcd-type env 'Fermion
 				 "struct Fermion" '*colors* '*fermion-dim*)]
+	   [env (ce-add-qcd-type env 'Staggered-Fermion
+				 "struct StaggeredFermion" '*colors* 1)]
 	   [env (ce-add-qcd-type env 'Projected-Fermion
 				 "struct ProjectedFermion"
 				 '*colors* '*projected-fermion-dim*)]
