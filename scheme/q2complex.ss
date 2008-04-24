@@ -187,16 +187,28 @@
 		       r*)
 		env)))
     (define (q2c-addu attr* output* input* r* env)
-      (q2c-addx attr* output* input* '*colors*
+      (q2c-addx 'complex-add attr* output* input* '*colors*
 		'gauge r* env))
     (define (q2c-addf attr* output* input* r* env)
-      (q2c-addx attr* output* input* '*fermion-dim*
+      (q2c-addx 'complex-add attr* output* input* '*fermion-dim*
 		'fermion r* env))
     (define (q2c-addh attr* output* input* r* env)
-      (q2c-addx attr* output* input* '*projected-fermion-dim*
+      (q2c-addx 'complex-add attr* output* input* '*projected-fermion-dim*
 		'projected-fermion r* env))
     (define (q2c-adds attr* output* input* r* env)
-      (q2c-addx attr* output* input* 1
+      (q2c-addx 'complex-add attr* output* input* 1
+		'staggered-fermion r* env))
+    (define (q2c-subu attr* output* input* r* env)
+      (q2c-addx 'complex-sub attr* output* input* '*colors*
+		'gauge r* env))
+    (define (q2c-subf attr* output* input* r* env)
+      (q2c-addx 'complex-sub attr* output* input* '*fermion-dim*
+		'fermion r* env))
+    (define (q2c-subh attr* output* input* r* env)
+      (q2c-addx 'complex-sub attr* output* input* '*projected-fermion-dim*
+		'projected-fermion r* env))
+    (define (q2c-subs attr* output* input* r* env)
+      (q2c-addx 'complex-sub attr* output* input* 1
 		'staggered-fermion r* env))
     (define (q2c-mulf attr* output* input* r* env)
       (q2c-mulx attr* output* input* '*fermion-dim*
@@ -450,13 +462,13 @@
 					   (list c (make-c-expr-number m0)))
 		       r*)
 		env)))
-    (define (q2c-addx attr* output* input* f-n t r* env)
+    (define (q2c-addx c-op attr* output* input* f-n t r* env)
       (define (complex-add c f r* env)
 	(let-values* ([(a env) (q2c-rename env (car input*) t c f)]
 		      [(b env) (q2c-rename env (cadr input*) t c f)]
 		      [(d env) (q2c-rename env (car output*) t c f)])
 		     (values (cons (make-qa0-operation attr*
-				     'complex-add
+				     c-op
 				     (list (make-reg d))
 				     (list (make-reg a) (make-reg b)))
 				   r*)
@@ -915,6 +927,10 @@
        (cons 'qcd-addf                      q2c-addf)
        (cons 'qcd-addh                      q2c-addh)
        (cons 'qcd-adds                      q2c-adds)
+       (cons 'qcd-subu                      q2c-subu)
+       (cons 'qcd-subf                      q2c-subf)
+       (cons 'qcd-subh                      q2c-subh)
+       (cons 'qcd-subs                      q2c-subs)
        (cons 'qcd-maddf                     q2c-maddf)
        (cons 'qcd-maddf-lo                  q2c-maddf-lo)
        (cons 'qcd-maddf-hi                  q2c-maddf-hi)

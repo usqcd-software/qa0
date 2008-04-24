@@ -22,7 +22,7 @@
 \title{QA---Register Transfer Language}
 \author{Andrew Pochinsky}
 \catcode`\$=11
-\date{Version 1.2.0 XXX\\$Id$}
+\date{Version 1.3.0 XXX\\$Id$}
 \catcode`\$=3
 
 \newcommand{\any}{${}^{*}$}
@@ -662,10 +662,42 @@ Compute $r\leftarrow a + b$ for a projected fermion.
 \begin{grammar}
 \terminal{(}\terminal{op} \terminal{qcd-adds} \terminal{()}
    \terminal{(} $r_S$ \terminal{)}
-   \terminal{(} $a_H$ $b_S$ \terminal{)}
+   \terminal{(} $a_S$ $b_S$ \terminal{)}
 \terminal{)}
 \end{grammar}
 Compute $r\leftarrow a + b$ for a staggered fermion.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-subu} \terminal{()}
+   \terminal{(} $r_G$ \terminal{)}
+   \terminal{(} $a_G$ $b_G$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow a - b$ for a gauge matrix.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-subf} \terminal{()}
+   \terminal{(} $r_F$ \terminal{)}
+   \terminal{(} $a_F$ $b_F$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow a - b$ for a fermion.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-subh} \terminal{()}
+   \terminal{(} $r_H$ \terminal{)}
+   \terminal{(} $a_H$ $b_H$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow a - b$ for a projected fermion.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-subs} \terminal{()}
+   \terminal{(} $r_S$ \terminal{)}
+   \terminal{(} $a_S$ $b_S$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow a - b$ for a staggered fermion.
 
 \begin{grammar}
 \terminal{(}\terminal{op} \terminal{qcd-maddf} \terminal{()}
