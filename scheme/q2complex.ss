@@ -355,9 +355,11 @@
 		    r*)
 	      env))
     (define (q2c-fnorm-lo-add attr* output* input* r* env)
-      (q2c-xnorm-add-do attr* output* input* r* env 'low '*fermion-dim*))
+      (q2c-xnorm-add-do attr* output* input* r* env
+			'low '*fermion-dim* 'fermion))
     (define (q2c-fnorm-hi-add attr* output* input* r* env)
-      (q2c-xnorm-add-do attr* output* input* r* env 'high '*fermion-dim*))
+      (q2c-xnorm-add-do attr* output* input* r* env
+			'high '*fermion-dim* 'fermion))
     (define (q2c-fnorm-add attr* output* input* r* env)
       (q2c-xnorm-add-do attr* output* input* r* env
 			'all '*fermion-dim* 'fermion))
