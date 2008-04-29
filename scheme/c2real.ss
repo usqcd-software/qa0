@@ -360,26 +360,28 @@
 	  (c2r-split c2r-complex-mul attr* output* input* r* env)
 	  (let-values* ([(a-re env) (c2r-rename env (car output*) 'real)]
 			[(a-im env) (c2r-rename env (car output*) 'imag)]
+			[t-re (new-reg)]
+			[t-im (new-reg)]
 			[(b-re env) (c2r-rename env (car input*) 'real)]
 			[(b-im env) (c2r-rename env (car input*) 'imag)]
 			[(c-re env) (c2r-rename env (cadr input*) 'real)]
 			[(c-im env) (c2r-rename env (cadr input*) 'imag)])
 	    (values (list* (make-qa0-operation attr* 'double-madd
 					       (list (make-reg a-im))
-					       (list (make-reg a-im)
+					       (list (make-reg t-im)
 						     (make-reg b-im)
 						     (make-reg c-re)))
 			   (make-qa0-operation attr* 'double-msub
 					       (list (make-reg a-re))
-					       (list (make-reg a-re)
+					       (list (make-reg t-re)
 						     (make-reg b-im)
 						     (make-reg c-im)))
 			   (make-qa0-operation attr* 'double-mul
-					       (list (make-reg a-im))
+					       (list (make-reg t-im))
 					       (list (make-reg b-re)
 						     (make-reg c-im)))
 			   (make-qa0-operation attr* 'double-mul
-					       (list (make-reg a-re))
+					       (list (make-reg t-re))
 					       (list (make-reg b-re)
 						     (make-reg c-re)))
 			   r*)
@@ -389,26 +391,28 @@
 	  (c2r-split c2r-complex-cmul attr* output* input* r* env)
 	  (let-values* ([(a-re env) (c2r-rename env (car output*) 'real)]
 			[(a-im env) (c2r-rename env (car output*) 'imag)]
+			[t-re (new-reg)]
+			[t-im (new-reg)]
 			[(b-re env) (c2r-rename env (car input*) 'real)]
 			[(b-im env) (c2r-rename env (car input*) 'imag)]
 			[(c-re env) (c2r-rename env (cadr input*) 'real)]
 			[(c-im env) (c2r-rename env (cadr input*) 'imag)])
 	    (values (list* (make-qa0-operation attr* 'double-msub
 					       (list (make-reg a-im))
-					       (list (make-reg a-im)
+					       (list (make-reg t-im)
 						     (make-reg b-im)
 						     (make-reg c-re)))
 			   (make-qa0-operation attr* 'double-madd
 					       (list (make-reg a-re))
-					       (list (make-reg a-re)
+					       (list (make-reg t-re)
 						     (make-reg b-im)
 						     (make-reg c-im)))
 			   (make-qa0-operation attr* 'double-mul
-					       (list (make-reg a-im))
+					       (list (make-reg t-im))
 					       (list (make-reg b-re)
 						     (make-reg c-im)))
 			   (make-qa0-operation attr* 'double-mul
-					       (list (make-reg a-re))
+					       (list (make-reg t-re))
 					       (list (make-reg b-re)
 						     (make-reg c-re)))
 			   r*)
@@ -418,6 +422,8 @@
 	  (c2r-split c2r-complex-madd attr* output* input* r* env)
 	  (let-values* ([(a-re env) (c2r-rename env (car output*) 'real)]
 			[(a-im env) (c2r-rename env (car output*) 'imag)]
+			[t-re (new-reg)]
+			[t-im (new-reg)]
 			[(x-re env) (c2r-rename env (car input*) 'real)]
 			[(x-im env) (c2r-rename env (car input*) 'imag)]
 			[(b-re env) (c2r-rename env (cadr input*) 'real)]
@@ -426,39 +432,33 @@
 			[(c-im env) (c2r-rename env (caddr input*) 'imag)])
 	    (values (list* (make-qa0-operation attr* 'double-madd
 					       (list (make-reg a-im))
-					       (list (make-reg a-im)
+					       (list (make-reg t-im)
 						     (make-reg b-im)
 						     (make-reg c-re)))
 			   (make-qa0-operation attr* 'double-msub
 					       (list (make-reg a-re))
-					       (list (make-reg a-re)
+					       (list (make-reg t-re)
 						     (make-reg b-im)
 						     (make-reg c-im)))
 			   (make-qa0-operation attr* 'double-madd
-					       (list (make-reg a-im))
+					       (list (make-reg t-im))
 					       (list (make-reg x-im)
 						     (make-reg b-re)
 						     (make-reg c-im)))
 			   (make-qa0-operation attr* 'double-madd
-					       (list (make-reg a-re))
+					       (list (make-reg t-re))
 					       (list (make-reg x-re)
 						     (make-reg b-re)
 						     (make-reg c-re)))
 			   r*)
 		    env))))
-    (define (c2r-complex-c2mul attr* output* input* r* env)
-      (c2r-complex-cmul attr* output*
-			(list (cadr input*) (car input*))
-			r* env))
-    (define (c2r-complex-c2madd attr* output* input* r* env)
-      (c2r-complex-cmul attr* output*
-			(list (car input*) (caddr input*) (cadr input*))
-			r* env))
     (define (c2r-complex-cmadd attr* output* input* r* env)
       (if (member (car output*) (cdr input*))
 	  (c2r-split c2r-complex-cmadd attr* output* input* r* env)
 	  (let-values* ([(a-re env) (c2r-rename env (car output*) 'real)]
 			[(a-im env) (c2r-rename env (car output*) 'imag)]
+			[t-re (new-reg)]
+			[t-im (new-reg)]
 			[(x-re env) (c2r-rename env (car input*) 'real)]
 			[(x-im env) (c2r-rename env (car input*) 'imag)]
 			[(b-re env) (c2r-rename env (cadr input*) 'real)]
@@ -467,21 +467,21 @@
 			[(c-im env) (c2r-rename env (caddr input*) 'imag)])
 	    (values (list* (make-qa0-operation attr* 'double-msub
 					       (list (make-reg a-im))
-					       (list (make-reg a-im)
+					       (list (make-reg t-im)
 						     (make-reg b-im)
 						     (make-reg c-re)))
 			   (make-qa0-operation attr* 'double-madd
 					       (list (make-reg a-re))
-					       (list (make-reg a-re)
+					       (list (make-reg t-re)
 						     (make-reg b-im)
 						     (make-reg c-im)))
 			   (make-qa0-operation attr* 'double-madd
-					       (list (make-reg a-im))
+					       (list (make-reg t-im))
 					       (list (make-reg x-im)
 						     (make-reg b-re)
 						     (make-reg c-im)))
 			   (make-qa0-operation attr* 'double-madd
-					       (list (make-reg a-re))
+					       (list (make-reg t-re))
 					       (list (make-reg x-re)
 						     (make-reg b-re)
 						     (make-reg c-re)))
@@ -529,10 +529,10 @@
       (let-values* ([(a-re env) (c2r-rename env (car output*) 'real)]
 		    [(a-im env) (c2r-rename env (car output*) 'imag)])
 	(values (list* (make-qa0-operation attr* 'double-zero
-					 (list (make-reg a-im)) '())
-		     (make-qa0-operation attr* 'double-zero
-					 (list (make-reg a-re)) '())
-		     r*)
+					   (list (make-reg a-im)) '())
+		       (make-qa0-operation attr* 'double-zero
+					   (list (make-reg a-re)) '())
+		       r*)
 	      env)))
     (define (c2r-complex-dot-add attr* output* input* r* env)
       (c2r-complex-cmadd attr* output* input* r* env))
@@ -567,8 +567,6 @@
        (cons 'complex-rmsub                  c2r-complex-rmsub)
        (cons 'complex-cmul                   c2r-complex-cmul)
        (cons 'complex-cmadd                  c2r-complex-cmadd)
-       (cons 'complex-c2mul                  c2r-complex-c2mul)
-       (cons 'complex-c2madd                 c2r-complex-c2madd)
        (cons 'complex-add-i                  c2r-complex-add-i)
        (cons 'complex-sub-i                  c2r-complex-sub-i)
        (cons 'complex-real-cmul-conj-init    c2r-real-cmul-conj-init)
