@@ -73,7 +73,7 @@ complex-rmul (v_c) (a_r b_c)
 **  v_c.re = a_r * b_c.re
 **  v_c.im = a_r * b_c.im
 .  dh-rmul (v_c) (a_r b_c)
-.. v_c = __fxpmul(a_c,b_c)
+.. v_c = __fxpmul(b_c,a_r)
 
 complex-rmadd (v_c) (a_c b_r c_c)
 *  v_c = a_c + b_r * c_c

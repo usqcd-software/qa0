@@ -108,7 +108,7 @@
 	(dh-times-minus-i        1 "$0 = __fxcxnsma(gZERO, %0, gONE)"       1)
 	(dh-add                  2 "$0 = __fpadd(%0, %1)"                   2)
 	(dh-sub                  2 "$0 = __fpsub(%0, %1)"                   2)
-	(dh-rmul                 2 "$0 = __fxpmul(%0, %1)"                  2)
+	(dh-rmul                 2 "$0 = __fxpmul(%1, %0)"                  2)
 	(dh-rmadd                3 "$0 = __fxcpmadd(%0, %2, %1)"            4)
 	(dh-rmsub                3 "$0 = __fxcpnmsub(%0, %2, %1)"           4)
 	(dh-add-i                2 "$0 = __fxcxnpma(%0, %1, gONE)"          2)
