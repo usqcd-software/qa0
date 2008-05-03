@@ -22,7 +22,7 @@
 \title{QA---Register Transfer Language}
 \author{Andrew Pochinsky}
 \catcode`\$=11
-\date{Version 1.3.1\\$Id$}
+\date{Version 1.4.0 XXX\\$Id$}
 \catcode`\$=3
 
 \newcommand{\any}{${}^{*}$}
@@ -602,6 +602,42 @@ Compute $r\leftarrow u^\dagger v^\dagger$ for gauge fields.
 Computes $r\leftarrow \Re \mbox{Tr}(b^\dagger c)$ for gauge fields.
 
 \begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-zerou} \terminal{()}
+   \terminal{(} $r_G$ \terminal{)}
+   \terminal{(} \terminal{)}
+\terminal{)}
+\end{grammar}
+Set $r\leftarrow 0$ for a gauge matrix.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-zerof} \terminal{()}
+   \terminal{(} $r_F$ \terminal{)}
+   \terminal{(} \terminal{)}
+\terminal{)}
+\end{grammar}
+Set $r\leftarrow 0$ for a fermion.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-zeroh} \terminal{()}
+   \terminal{(} $r_H$ \terminal{)}
+   \terminal{(} \terminal{)}
+\terminal{)}
+\end{grammar}
+Set $r\leftarrow 0$ for a projected fermion.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-zeros} \terminal{()}
+   \terminal{(} $r_S$ \terminal{)}
+   \terminal{(} \terminal{)}
+\terminal{)}
+\end{grammar}
+Set $r\leftarrow 0$ for a staggered fermion.
+
+
+\begin{grammar}
 \terminal{(}\terminal{op} \terminal{qcd-scaleu} \terminal{()}
    \terminal{(} $r_G$ \terminal{)}
    \terminal{(} $v_d$ $x_G$ \terminal{)}
@@ -1129,13 +1165,22 @@ Compute $r\leftarrow a^{*} b$.
 Compute $r\leftarrow -a$.
 
 \begin{grammar}
+\terminal{(}\terminal{op} \terminal{complex-zero}
+     \terminal{(} \terminal{)}
+   \terminal{(} $r_c$ \terminal{)}
+   \terminal{(} \terminal{)}
+\terminal{)}
+\end{grammar}
+Set $r\leftarrow 0$.
+
+\begin{grammar}
 \terminal{(}\terminal{op} \terminal{complex-move}
      \terminal{(} \terminal{)}
    \terminal{(} $r_c$ \terminal{)}
    \terminal{(} $a_c$ \terminal{)}
 \terminal{)}
 \end{grammar}
-Compute $r\leftarrow a$.
+Set $r\leftarrow a$.
 
 %\begin{grammar}
 %\terminal{(}\terminal{op} \terminal{complex-}
@@ -1370,7 +1415,7 @@ Compute $r\leftarrow a - b c$.
    \terminal{(} $a_d$ \terminal{)}
 \terminal{)}
 \end{grammar}
-Compute $r\leftarrow a$.
+Set $r\leftarrow a$.
 
 
 \begin{grammar}
@@ -1389,7 +1434,7 @@ Compute $r\leftarrow - a$.
    \terminal{(} \terminal{)}
 \terminal{)}
 \end{grammar}
-Compute $r\leftarrow 0$.
+Set $r\leftarrow 0$.
 
 \subsection{Integer operations}
 \begin{grammar}

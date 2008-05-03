@@ -21,6 +21,7 @@
       '((dh-make                   dh-double)
 	(dh-real                   double)
 	(dh-imag                   double)
+	(dh-zero                   dh-double)
 	(dh-move                   dh-double)
 	(dh-neg                    dh-double)
 	(dh-times-plus-i           dh-double)
@@ -102,6 +103,7 @@
 	(dh-make                 2 "$0 = __cmplx(%0, %1)"                   0)
 	(dh-real                 1 "$0 = __creal(%0)"                       0)
 	(dh-imag                 1 "$0 = __cimag(%0)"                       0)
+	(dh-zero                 0 "$0 = gZERO"                             0)
 	(dh-move                 1 "$0 = %0"                                0)
 	(dh-neg                  1 "$0 = __fpneg(%0)"                       2)
 	(dh-times-plus-i         1 "$0 = __fxcxnpma(gZERO, %0, gONE)"       1)
@@ -140,7 +142,8 @@
 	(dh-float          dh-double)
 	(dh-double         dh-double)))
     (define op-needing-zero*
-      '(dh-times-plus-i
+      '(dh-zero
+	dh-times-plus-i
 	dh-times-minus-i
 	dh-real-cmul-conj-init
 	dh-norm-init

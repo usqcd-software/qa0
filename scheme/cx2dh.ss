@@ -95,6 +95,7 @@
 	       r*)))
     (define dh-optable
       (list
+       (list* 'complex-zero                 'dh-zero        #f             )
        (list* 'complex-move                 'dh-move        #f             )
        (list* 'complex                      'dh-make        #f             )
        (list* 'complex-real                 'dh-real        #f             )

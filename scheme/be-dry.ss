@@ -17,7 +17,8 @@
 (define machine-dry
   (let ()
     (define op-type-table
-      '((complex-add               complex-double)
+      '((complex-zero              complex-double)
+	(complex-add               complex-double)
 	(complex-sub               complex-double)
 	(complex-add-i             complex-double)
 	(complex-sub-i             complex-double)
@@ -86,6 +87,7 @@
 	(double-mul              2 "$0 = %0 * (%1)"                         1)
 	(double-madd             3 "$0 = %0 + (%1) * (%2)"                  2)
 	(double-msub             3 "$0 = %0 - (%1) * (%2)"                  2)
+	(complex-zero            0 "$0 = 0.0"                               0)
 	(complex-move            1 "$0 = %0"                                0)
 	(complex                 2 "$0 = %0 + I * (%1)"                     0)
 	(complex-real            1 "$0 = creal(%0)"                         0)

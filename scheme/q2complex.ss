@@ -318,6 +318,18 @@
     (define (q2c-msubs attr* output* input* r* env)
       (q2c-msubx attr* output* input* 1
 		 'all 'staggered-fermion r* env))
+    (define (q2c-zerou attr* output* input* r* env)
+      (q2c-zerox attr* output* input* '*colors*
+		 'all 'gauge r* env))
+    (define (q2c-zerof attr* output* input* r* env)
+      (q2c-zerox attr* output* input* '*fermion-dim*
+		 'all 'fermion r* env))
+    (define (q2c-zeroh attr* output* input* r* env)
+      (q2c-zerox attr* output* input* '*projected-fermion-dim*
+		 'all 'projected-fermion r* env))
+    (define (q2c-zeros attr* output* input* r* env)
+      (q2c-zerox attr* output* input* 1
+		 'all 'staggered-fermion r* env))
     (define (q2c-scaleu attr* output* input* r* env)
       (q2c-scalex attr* output* input* '*colors*
 		  'all 'gauge r* env))
@@ -487,6 +499,27 @@
 		    [(= f f-n) (c-loop (+ c 1) r* env)]
 		    [else (let-values* ([(r* env) (complex-add c f r* env)])
 			    (f-loop (+ f 1) r* env))]))]))))
+    (define (q2c-zerox attr* output* input* f-n part t r* env)
+      (define (complex-zero c f r* env)
+	(let-values* ([(r env) (q2c-rename env (car output*) t c f)])
+	  (values (cons (make-qa0-operation attr*
+			  'complex-zero (list (make-reg r)) '())
+			r*)
+		  env)))
+      (q2c-check-list output* 1 "QCD zero outputs")
+      (q2c-check-list input* 0 "QCD zero inputs")
+      (let* ([c-n (ce-resolve-const env '*colors* "Color count")]
+	     [f-n (ce-resolve-const env f-n "Field dimension")]
+	     [f-lo (if (eq? part 'high) (/ f-n 2) 0)]
+	     [f-hi (if (eq? part 'low) (/ f-n 2) f-n)])
+	(let c-loop ([c 0] [r* r*] [env env])
+	  (cond
+	   [(= c c-n) (values r* env)]
+	   [else (let f-loop ([f f-lo] [r* r*] [env env])
+		   (cond
+		    [(= f f-hi) (c-loop (+ c 1) r* env)]
+		    [else (let-values* ([(r* env) (complex-zero c f r* env)])
+			    (f-loop (+ f 1) r* env))]))]))))
     (define (q2c-scalex attr* output* input* f-n part t r* env)
       (define (complex-scale c f r* env)
 	(let-values* ([a (car input*)]
@@ -498,8 +531,8 @@
 			  (list a (make-reg b)))
 			r*)
 		  env)))
-      (q2c-check-list output* 1 "QCD add outputs")
-      (q2c-check-list input* 2 "QCD add inputs")
+      (q2c-check-list output* 1 "QCD scale outputs")
+      (q2c-check-list input* 2 "QCD scale inputs")
       (let* ([c-n (ce-resolve-const env '*colors* "Color count")]
 	     [f-n (ce-resolve-const env f-n "Field dimension")]
 	     [f-lo (if (eq? part 'high) (/ f-n 2) 0)]
@@ -919,6 +952,10 @@
        (cons 'qcd-su-n-mul-conj             q2c-u-mul-conj)
        (cons 'qcd-su-n-conj-mul-conj        q2c-u-conj-mul-conj)
        (cons 'qcd-su-n-real-trace-conj-mul  q2c-u-retr-conj-mul)
+       (cons 'qcd-zerou                     q2c-zerou)
+       (cons 'qcd-zerof                     q2c-zerof)
+       (cons 'qcd-zeroh                     q2c-zeroh)
+       (cons 'qcd-zeros                     q2c-zeros)
        (cons 'qcd-scaleu                    q2c-scaleu)
        (cons 'qcd-scalef                    q2c-scalef)
        (cons 'qcd-scalef-lo                 q2c-scalef-lo)

@@ -124,6 +124,15 @@
        [(assq type c2r-load*)
 	=> (lambda (n&f) ((cdr n&f) attr* type output addr* r* env))]
        [else (values (cons c r*) env)]))
+    (define (c2r-complex-zero attr* output* input* r* env)
+      (let-values* ([(b-re env) (c2r-rename env (car output*) 'real)]
+		    [(b-im env) (c2r-rename env (car output*) 'imag)])
+	(values (list* (make-qa0-operation attr* 'double-zero
+					   (list (make-reg b-im)) '())
+		       (make-qa0-operation attr* 'double-zero
+					   (list (make-reg b-re)) '())
+		       r*)
+		env)))
     (define (c2r-complex-move attr* output* input* r* env)
       (let-values* ([(a-re env) (c2r-rename env (car input*) 'real)]
 		    [(a-im env) (c2r-rename env (car input*) 'imag)]
@@ -551,6 +560,7 @@
 	      env)))
     (define c2r-op*
       (list
+       (cons 'complex-zero                   c2r-complex-zero)
        (cons 'complex-move                   c2r-complex-move)
        (cons 'complex                        c2r-complex)
        (cons 'complex-real                   c2r-complex-real)
