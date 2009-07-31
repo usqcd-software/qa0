@@ -19,7 +19,7 @@
   (define (ce-start-env machine real)
     (let* ([env (ce-empty-env)]
            [env (machine env)]
-           [env (ce-bind env 'proc-prefix "qop")]
+           [env (ce-bind env 'proc-prefix "qop_")]
            [env (ce-bind env 'proc-infix "mdwf")]
            [env (ce-bind env 'proc-suffix "")]
            [env (ce-add-qcd-type env 'Fermion-double
@@ -100,9 +100,18 @@
         (cf-repeat-range id low high body* out* env)]
       [qa0-macro-def (id)
         (cf-macro-def ast id out* env)]
+      [qa0-name-prefix (name) (cf-name-prefix ast name out* env)]
+      [qa0-name-infix (name) (cf-name-infix ast name out* env)]
+      [qa0-name-suffix (name) (cf-name-suffix ast name out* env)]
       [qa0-verbose () (cf-verbose ast out* env)]))
   (define (cf-macro-def ast id out* env)
     (values out* (ce-add-macro env id ast)))
+  (define (cf-name-prefix ast name out* env)
+    (values out* (ce-bind env 'proc-prefix name)))
+  (define (cf-name-infix ast name out* env)
+    (values out* (ce-bind env 'proc-infix name)))
+  (define (cf-name-suffix ast name out* env)
+    (values out* (ce-bind env 'proc-suffix name)))
   (define (cf-alias old new out* env)
     (values out* (ce-add-alias env new old)))
   (define (cf-const name value out* env)
