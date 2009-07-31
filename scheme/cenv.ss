@@ -180,7 +180,6 @@
          [env (ce-bind-x env 'macro name value)])
     env))
 (define (ce-add-qcd-type env name c-name a-dim b-dim elem)
-  ;; XXXX
   (let* ([c-type (case elem
                    [(complex-float complex-double) elem]
                    [else (ic-error 'ce-add-qcd-type "Bad elem type ~s" elem)])]
