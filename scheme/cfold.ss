@@ -40,12 +40,14 @@
            [env (ce-add-qcd-type env 'Projected-Fermion-float
                                  "struct ProjectedFermionF" '*colors*
                                  '*projected-fermion-dim* 'complex-float)]
-           [env (ce-add-qcd-type env 'SU-n-double
-                                 "struct SUnD" '*colors*
-                                 '*colors* 'complex-double)]
-           [env (ce-add-qcd-type env 'SU-n-float
-                                 "struct SUnF" '*colors*
-                                 '*colors* 'complex-float)]
+           [env (ce-add-qcd-matrix-type env 'SU-n-double "struct SUnD"
+                                        '*colors* 1 'complex-double)]
+           [env (ce-add-qcd-matrix-type env 'SU-n-float "struct SUnF"
+                                        '*colors* 1 'complex-float)]
+           [env (ce-add-qcd-matrix-type env 'Clover-double "struct CloverD"
+                                        '*clovers* 2 'complex-double)]
+           [env (ce-add-qcd-matrix-type env 'Clover-float "struct CloverF"
+                                        '*clovers* 2 'complex-float)]
            [env
             (case real
               [(double)
@@ -58,7 +60,8 @@
                                          'Staggered-Fermion-double)]
                       [env (ce-add-alias env 'Projected-Fermion
                                          'Projected-Fermion-double)]
-                      [env (ce-add-alias env 'SU-n 'SU-n-double)])
+                      [env (ce-add-alias env 'SU-n 'SU-n-double)]
+                      [env (ce-add-alias env 'Clover 'Clover-double)])
                  env)]
               [(float)
                (let* ([env (ce-bind env 'prec-letter  "f")]
@@ -70,7 +73,8 @@
                                          'Staggered-Fermion-float)]
                       [env (ce-add-alias env 'Projected-Fermion
                                          'Projected-Fermion-float)]
-                      [env (ce-add-alias env 'SU-n 'SU-n-float)])
+                      [env (ce-add-alias env 'SU-n 'SU-n-float)]
+                      [env (ce-add-alias env 'Clover 'Clover-float)])
                  env)]
               [else (ic-error 'cfold "Bad value of REAL: ~a" real)])]
            [env (ce-add-const env '*mdwf-start-sum-dimension*

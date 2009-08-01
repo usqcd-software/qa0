@@ -27,7 +27,6 @@
 ;; (provide ce-add-macro)
 ;; (provide ce-add-qcd-type)
 ;; (provide ce-for-each)
-;; (provide ce-bgl)
 ;;
 
 (define-syntax ce-extend
@@ -180,7 +179,6 @@
          [env (ce-bind-x env 'macro name value)])
     env))
 (define (ce-add-qcd-type env name c-name a-dim b-dim elem)
-  ;; XXXX
   (let* ([c-type (case elem
                    [(complex-float complex-double) elem]
                    [else (ic-error 'ce-add-qcd-type "Bad elem type ~s" elem)])]
@@ -189,18 +187,11 @@
          [a-size (ce-resolve-const env a-dim "(const ~a)" a-dim)]
          [b-size (ce-resolve-const env b-dim "(const ~a)" b-dim)])
     (ce-add-type-2 env name c-name (* a-size b-size c-size) c-align elem)))
-
-(define (ce-bgl env)
-  (let* ([env (ce-add-type env 'int            "int"              4  4)]
-         [env (ce-add-type env 'pointer        "void *"           4  4)]
-         [env (ce-add-type env 'float          "float"            4  4)]
-         [env (ce-add-type env 'double         "double"           8  8)]
-         [env (ce-add-type env 'vector-float   "vector float"     8  8)]
-         [env (ce-add-type env 'vector-double  "vector double"   16 16)]
-         [env (ce-add-type env 'complex-float  "float _Complex"   8  8)]
-         [env (ce-add-type env 'complex-double "double _Complex" 16 16)]
-         [env (ce-add-const env '*colors*            3)]
-         [env (ce-add-const env '*dim*               4)]
-         [env (ce-add-const env '*fermion-dim*       4)]
-         [env (ce-add-const env '*projected-fermion-dim*  2)])
-    env))
+(define (ce-add-qcd-matrix-type env name c-name a-dim n elem)
+  (let* ([c-type (case elem
+                   [(complex-float complex-double) elem]
+                   [else (ic-error 'ce-add-qcd-type "Bad elem type ~s" elem)])]
+         [c-size (ce-lookup-x env 'size-of c-type "(size-of <elem>)")]
+         [c-align (ce-lookup-x env 'align-of c-type "(align-of <elem>)")]
+         [a-size (ce-resolve-const env a-dim "(const ~a)" a-dim)])
+    (ce-add-type-2 env name c-name (* a-size a-size n c-size) c-align elem)))

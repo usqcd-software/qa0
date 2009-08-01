@@ -8,13 +8,27 @@
 ;;
 ;; (provide qcd->complex)
 ;;
+(define-syntax q2c-rename
+  (syntax-rules ()
+    [(_ env base type i ...) (q2c-rename* env base type (list i ...))]))
+
+(define q2c-new-reg
+  (let ([n 0])
+    (lambda () (let ([r (gen-reg 'c n)])
+                 (set! n (+ n 1))
+                 r))))
+
+(define (q2c-rename* env base type i*)
+  (let ([key (list 'qcd->complex base type i*)])
+    (ce-search env key
+               (lambda (val)
+                 (values val env))
+               (lambda ()
+                 (let* ([r (q2c-new-reg)]
+                        [env (ce-bind env key r)])
+                   (values r env))))))
 (define qcd->complex
   (let ()
-    (define new-reg
-      (let ([n 0])
-        (lambda () (let ([r (gen-reg 'c n)])
-                     (set! n (+ n 1))
-                     r))))
     (define (q2c-decl decl env)
       (variant-case decl
         [qa0-proc (attr* name arg-name* arg-type* arg-c-name* arg-c-type* code*)
@@ -133,8 +147,60 @@
                     [(= f f-hi) (c-loop (+ c 1) r* env)]
                     [else (let-values* ([(r* e) (c-store c f r* env)])
                             (f-loop (+ f 1) r* e))]))]))))
+    (define (q2c-store-clover attr* addr* value r* env)
+      (q2c-store-xyzt attr* addr* value 'clover 'Clover r* env))
+    (define (q2c-store-clover-double attr* addr* value r* env)
+      (q2c-store-xyzt attr* addr* value 'clover 'Clover-double r* env))
+    (define (q2c-store-clover-float attr* addr* value r* env)
+      (q2c-store-xyzt attr* addr* value 'clover 'Clover-float r* env))
+    (define (q2c-store-xyzt attr* addr* value t tt r* env)
+      (let* ([c-t (ce-lookup-x env 'element-name tt "element type")]
+             [c-s (ce-lookup-x env 'size-of c-t "element size")]
+             [cl-n (ce-resolve-const env '*clovers* "Clover size")]
+             [cl-c (ce-resolve-const env '*colors* "Color count")]
+             [cl-h (ce-resolve-const env '*projected-fermion-dim* "PF size")])
+        (define (c-load p x-c y-h z-c t-h r* env)
+          (let-values* ([(x env) (q2c-rename env value t p x-c y-h z-c t-h)]
+                        [idx (if (eq? p 'low) 0 (* cl-n cl-n))]
+                        [idx (+ idx t-h (* cl-h 
+                                           (+ z-c
+                                              (* cl-c
+                                                 (+ y-h
+                                                    (* cl-h x-c))))))]
+                        [off (* c-s idx)])
+            (values (cons (make-qa0-store attr* c-t
+                                          (append addr*
+                                                  (list (make-c-expr-number
+                                                         off)))
+                                          (make-reg x))
+                          r*)
+                    env)))
+        (define (load-part p r* env)
+          (let loop-x ([x 0] [r* r*] [env env])
+            (cond
+             [(= x cl-c) (values r* env)]
+             [else
+              (let loop-y ([y 0] [r* r*] [env env])
+                (cond
+                 [(= y cl-h) (loop-x (+ x 1) r* env)]
+                 [else
+                  (let loop-z ([z 0] [r* r*] [env env])
+                    (cond
+                     [(= z cl-c) (loop-y (+ y 1) r* env)]
+                     [else
+                      (let loop-t ([t 0] [r* r*] [env env])
+                        (cond
+                         [(= t cl-h) (loop-z (+ z 1) r* env)]
+                         [else
+                          (let-values ([(r* env) (c-load p x y z t r* env)])
+                            (loop-t (+ t 1) r* env))]))]))]))])))
+        (let-values* ([(r* env) (load-part 'low r* env)])
+          (load-part 'high r* env))))
     (define q2c-store*
       (list
+       (cons 'qcd-clover                   q2c-store-clover)
+       (cons 'qcd-clover-double            q2c-store-clover-double)
+       (cons 'qcd-clover-float             q2c-store-clover-float)
        (cons 'qcd-su-n                     q2c-store-su-n)
        (cons 'qcd-su-n-double              q2c-store-su-n-double)
        (cons 'qcd-su-n-float               q2c-store-su-n-float)
@@ -237,8 +303,59 @@
                     [(= f f-hi) (c-loop (+ c 1) r* env)]
                     [else (let-values* ([(r* e) (c-load c f r* env)])
                                        (f-loop (+ f 1) r* e))]))]))))
+    (define (q2c-load-clover attr* output addr* r* env)
+      (q2c-load-xyzt attr* output addr* 'clover 'Clover r* env))
+    (define (q2c-load-clover-double attr* output addr* r* env)
+      (q2c-load-xyzt attr* output addr* 'clover 'Clover-double r* env))
+    (define (q2c-load-clover-float attr* output addr* r* env)
+      (q2c-load-xyzt attr* output addr* 'clover 'Clover-float r* env))
+    (define (q2c-load-xyzt attr* output addr* t tt r* env)
+      (let* ([c-t (ce-lookup-x env 'element-name tt "element type")]
+             [c-s (ce-lookup-x env 'size-of c-t "element size")]
+             [cl-n (ce-resolve-const env '*clovers* "Clover size")]
+             [cl-c (ce-resolve-const env '*colors* "Color count")]
+             [cl-h (ce-resolve-const env '*projected-fermion-dim* "PF size")])
+        (define (c-load p x-c y-h z-c t-h r* env)
+          (let-values* ([(x env) (q2c-rename env output t p x-c y-h z-c t-h)]
+                        [idx (if (eq? p 'low) 0 (* cl-n cl-n))]
+                        [idx (+ idx t-h (* cl-h 
+                                           (+ z-c
+                                              (* cl-c
+                                                 (+ y-h
+                                                    (* cl-h x-c))))))]
+                        [off (* c-s idx)])
+            (values (cons (make-qa0-load attr* c-t (make-reg x)
+                                         (append addr*
+                                                 (list (make-c-expr-number
+                                                        off))))
+                          r*)
+                    env)))
+        (define (load-part p r* env)
+          (let loop-x ([x 0] [r* r*] [env env])
+            (cond
+             [(= x cl-c) (values r* env)]
+             [else
+              (let loop-y ([y 0] [r* r*] [env env])
+                (cond
+                 [(= y cl-h) (loop-x (+ x 1) r* env)]
+                 [else
+                  (let loop-z ([z 0] [r* r*] [env env])
+                    (cond
+                     [(= z cl-c) (loop-y (+ y 1) r* env)]
+                     [else
+                      (let loop-t ([t 0] [r* r*] [env env])
+                        (cond
+                         [(= t cl-h) (loop-z (+ z 1) r* env)]
+                         [else
+                          (let-values ([(r* env) (c-load p x y z t r* env)])
+                            (loop-t (+ t 1) r* env))]))]))]))])))
+        (let-values* ([(r* env) (load-part 'low r* env)])
+          (load-part 'high r* env))))
     (define q2c-load*
       (list
+       (cons 'qcd-clover                   q2c-load-clover)
+       (cons 'qcd-clover-double            q2c-load-clover-double)
+       (cons 'qcd-clover-float             q2c-load-clover-float)
        (cons 'qcd-su-n                     q2c-load-su-n)
        (cons 'qcd-su-n-double              q2c-load-su-n-double)
        (cons 'qcd-su-n-float               q2c-load-su-n-float)
@@ -295,8 +412,8 @@
              [e-t (ce-lookup-x env 'element-name tt "element name")]
              [d-n (ce-lookup-x env 'size-of e-t "complex size")]
              [c   (car input*)] [f (cadr input*)] [r (car output*)]
-             [r0  (make-reg (new-reg))] [m0 (* d-n f-n)]
-             [r1  (make-reg (new-reg))] [m1 d-n])
+             [r0  (make-reg (q2c-new-reg))] [m0 (* d-n f-n)]
+             [r1  (make-reg (q2c-new-reg))] [m1 d-n])
         (values (list* (make-qa0-operation '() 'int-add output* (list r0 r1))
                        (make-qa0-operation '() 'int-mul (list r1)
                                            (list f (make-c-expr-number m1)))
@@ -305,25 +422,75 @@
                        r*)
                 env)))
     (define (q2c-staggered-fermion-offset attr* output* input* r* env)
-      (let* ([d-n (ce-lookup-x env 'size-of 'COMPLEX "complex size")]
-             [c   (car input*)] [r (car output*)])
-        (values (list* (make-qa0-operation '() 'int-mul (list r)
-                                           (list c (make-c-expr-number d-n)))
-                       r*)
-                env)))
+      (q2c-offset-1 attr* output* input* 'COMPLEX r* env))
     (define (q2c-staggered-fermion-double-offset attr* output* input* r* env)
-      (let* ([d-n (ce-lookup-x env 'size-of 'complex-double "complex size")]
+      (q2c-offset-1 attr* output* input* 'complex-double r* env))
+    (define (q2c-staggered-fermion-float-offset attr* output* input* r* env)
+      (q2c-offset-1 attr* output* input* 'complex-float r* env))
+    (define (q2c-offset-1 attr* output* input* tt r* env)
+      (let* ([d-n (ce-lookup-x env 'size-of tt "complex size")]
              [c   (car input*)] [r (car output*)])
         (values (list* (make-qa0-operation '() 'int-mul (list r)
                                            (list c (make-c-expr-number d-n)))
                        r*)
                 env)))
-    (define (q2c-staggered-fermion-float-offset attr* output* input* r* env)
-      (let* ([d-n (ce-lookup-x env 'size-of 'complex-float "complex size")]
-             [c   (car input*)] [r (car output*)])
-        (values (list* (make-qa0-operation '() 'int-mul (list r)
-                                           (list c (make-c-expr-number d-n)))
-                       r*)
+    (define (q2c-clover-lo-offset attr* output* input* r* env)
+      (q2c-offset-4 attr* output* input* 'low 'COMPLEX r* env))
+    (define (q2c-clover-lo-double-offset attr* output* input* r* env)
+      (q2c-offset-4 attr* output* input* 'low 'complex-double r* env))
+    (define (q2c-clover-lo-float-offset attr* output* input* r* env)
+      (q2c-offset-4 attr* output* input* 'low 'complex-float r* env))
+    (define (q2c-clover-hi-offset attr* output* input* r* env)
+      (q2c-offset-4 attr* output* input* 'high 'COMPLEX r* env))
+    (define (q2c-clover-hi-double-offset attr* output* input* r* env)
+      (q2c-offset-4 attr* output* input* 'high 'complex-double r* env))
+    (define (q2c-clover-hi-float-offset attr* output* input* r* env)
+      (q2c-offset-4 attr* output* input* 'high 'complex-float r* env))
+    (define (q2c-offset-4 attr* output* input* p tt r* env)
+      (let* ([c-n (ce-resolve-const env '*colors* "Color count")]
+             [h-n (ce-resolve-const env '*projected-fermion-dim* "PF size")]
+             [cl-n (ce-resolve-const env '*clovers* "Clover size")]
+             [c-s (ce-lookup-x env 'size-of tt "complex size")]
+             [t (cadddr input*)] [ft c-s]
+             [z (caddr input*)]  [fz (* ft h-n)]
+             [y (cadr input*)]   [fy (* fz c-n)]
+             [x (car input*)]    [fx (* fy h-n)]
+             [rt (q2c-new-reg)] [st (make-reg rt)]
+             [rz (q2c-new-reg)] [sz (make-reg rz)]
+             [ry (q2c-new-reg)] [sy (make-reg ry)]
+             [rx (q2c-new-reg)] [sx (make-reg rx)]
+             [r1 (q2c-new-reg)] [s1 (make-reg r1)]
+             [r2 (q2c-new-reg)] [s2 (make-reg r2)]
+             [r3 (q2c-new-reg)] [s3 (make-reg r3)]
+             [fp (* fx c-n)])
+        (values
+         (if (eq? p 'low)
+             (list* (make-qa0-operation '() 'int-add output* (list s1 s2))
+                    (make-qa0-operation '() 'int-add (list s1) (list sx sy))
+                    (make-qa0-operation '() 'int-add (list s2) (list sz st))
+                    (make-qa0-operation '() 'int-mul (list sx)
+                                        (list x (make-c-expr-number fx)))
+                    (make-qa0-operation '() 'int-mul (list sy)
+                                        (list y (make-c-expr-number fy)))
+                    (make-qa0-operation '() 'int-mul (list sz)
+                                        (list z (make-c-expr-number fz)))
+                    (make-qa0-operation '() 'int-mul (list st)
+                                        (list t (make-c-expr-number ft)))
+                    r*)
+             (list* (make-qa0-operation '() 'int-add output*
+                                        (list s3 (make-c-expr-number fp)))
+                    (make-qa0-operation '() 'int-add (list s3) (list s1 s2))
+                    (make-qa0-operation '() 'int-add (list s1) (list sx sy))
+                    (make-qa0-operation '() 'int-add (list s2) (list sz st))
+                    (make-qa0-operation '() 'int-mul (list sx)
+                                        (list x (make-c-expr-number fx)))
+                    (make-qa0-operation '() 'int-mul (list sy)
+                                        (list y (make-c-expr-number fy)))
+                    (make-qa0-operation '() 'int-mul (list sz)
+                                        (list z (make-c-expr-number fz)))
+                    (make-qa0-operation '() 'int-mul (list st)
+                                        (list t (make-c-expr-number ft)))
+                    r*))
                 env)))
     (define (q2c-addu attr* output* input* r* env)
       (q2c-addx 'complex-add attr* output* input* '*colors*
@@ -387,6 +554,66 @@
                 q2c-get-conj-gauge q2c-get-conj-gauge
                 'complex-ccmul 'complex-ccmadd
                 r* env))
+    (define (q2c-mul-clover attr* output* input* r* env)
+      (define (do-part p r* env)
+        (let* ([c-n (ce-resolve-const env '*colors* "Color count")]
+               [p-n (ce-resolve-const env '*projected-fermion-dim* "PF dim")]
+               [f-n (ce-resolve-const env '*fermion-dim* "Fermion dim")]
+               [b-lo (if (eq? p 'low) 0 p-n)]
+               [b-hi (if (eq? p 'low) p-n f-n)]
+               [r-C (car input*)]
+               [r-b (cadr input*)]
+               [r-r (car output*)])
+          (define (get-result a id b j env)
+            (cond
+             [(and (= b (- c-n 1)) (= j (- p-n 1)))
+              (q2c-get-fermion r-r a id env)]
+             [else (q2c-get-fermion (q2c-new-reg) a id env)]))
+          (define (get-op a id b j)
+            (cond
+             [(and (= b 0) (= j 0)) #t]
+             [(and (= c-n 1) (= p-n 1)) #t]
+             [else #f]))
+          (define (do-op op r-v r-x C-v b-v r*)
+            (cond
+             [op (cons (make-qa0-operation attr* 'complex-mul
+                                           (list (make-reg r-v))
+                                           (list (make-reg C-v)
+                                                 (make-reg b-v)))
+                       r*)]
+             [else (cons (make-qa0-operation attr* 'complex-madd
+                                             (list (make-reg r-v))
+                                             (list (make-reg r-x)
+                                                   (make-reg C-v)
+                                                   (make-reg b-v)))
+                       r*)]))
+          (define (do-one p a i id r* env)
+            (let loop-b ([b 0] [r* r*] [env env] [r-x #f])
+              (cond
+               [(= b c-n) (values r* env)]
+               [else
+                (let loop-j ([j 0] [jd b-lo] [r* r*] [env env] [r-x r-x])
+                  (cond
+                   [(= j p-n) (loop-b (+ b 1) r* env r-x)]
+                   [else
+                    (let-values* ([(b-v env) (q2c-get-fermion r-b b jd env)]
+                                  [(C-v env) (q2c-get-clover r-C p a i b j env)]
+                                  [(r-v env) (get-result a id b j env)]
+                                  [op (get-op a id b j)]
+                                  [r* (do-op op r-v r-x C-v b-v r*)])
+                      (loop-j (+ j 1) (+ jd 1) r* env r-v))]))])))
+          (let loop-a ([a 0] [r* r*] [env env])
+            (cond
+             [(= a c-n) (values r* env)]
+             [else
+              (let loop-i ([i 0] [id b-lo] [r* r*] [env env])
+                (cond
+                 [(= i p-n) (loop-a (+ a 1) r* env)]
+                 [else
+                  (let-values ([(r* env) (do-one p a i id r* env)])
+                    (loop-i (+ i 1) (+ id 1) r* env))]))]))))
+      (let-values ([(r* env) (do-part 'low r* env)])
+        (do-part 'high r* env)))
     (define (q2c-u-retr-conj-mul attr* output* input* r* env)
       (q2c-check-list output* 1 "qcd-su-n-real-trace-conj-mul outputs")
       (q2c-check-list input* 2 "qcd-su-n-real-trace-conj-mul inputs")
@@ -397,7 +624,7 @@
         (define (step x y r* env q)
           (let-values* ([(v-a env) (q2c-get-conj-gauge r-a x y env)]
                         [(v-b env) (q2c-get-gauge r-b x y env)]
-                        [(p) (make-reg (new-reg))])
+                        [(p) (make-reg (q2c-new-reg))])
             (values (cons (if (and (zero? x) (zero? y))
                               (make-qa0-operation
                                attr*
@@ -818,7 +1045,7 @@
                                    r*)
                              env))]))))
         (define (s-mul-1 r* env)
-          (let ([q (new-reg)])
+          (let ([q (q2c-new-reg)])
             (let x-loop ([x 0] [r* r*] [env env])
               (cond
                [(= x c-n) (values r* env q)]
@@ -867,12 +1094,14 @@
                    (let-values* ([(r* env r-x) (s-madd-x r-x r-r c r* env)])
                      (values r* env))]
                  [else
-                   (let-values* ([(r* env r-x) (s-madd-x r-x (new-reg) c
+                   (let-values* ([(r* env r-x) (s-madd-x r-x (q2c-new-reg) c
                                                          r* env)])
                      (loop (+ c 1) r* env r-x))]))))))
     (define (q2c-mulu attr* output* input* a-get b-get op-0 op-k r* env)
       (q2c-mul-g attr* output* input* '*colors* q2c-get-gauge op-0 op-k
                  a-get b-get r* env))
+    (define (q2c-get-clover r p a b c d env)
+      (q2c-rename env r 'clover p a b c d))
     (define (q2c-get-fermion r i j env)
       (q2c-rename env r 'fermion i j))
     (define (q2c-get-projected-fermion r i j env)
@@ -894,15 +1123,6 @@
     (define (q2c-check-list x* size msg)
       (if (not (= (length x*) size))
           (s-error "ERROR: ~a" msg)))
-    (define (q2c-rename env base type i-a i-b)
-      (let ([key (list 'qcd->complex base type i-a i-b)])
-        (ce-search env key
-                   (lambda (val)
-                     (values val env))
-                   (lambda ()
-                     (let* ([r (new-reg)]
-                            [env (ce-bind env key r)])
-                       (values r env))))))
     (define (q2c-project attr* output* input* r* env)
       (q2c-check-list output* 1 "QCD gamma projection result")
       (q2c-check-list input* 1 "QCD gamma projection source")
@@ -1072,6 +1292,7 @@
        (cons 'qcd-mulf-conj                 q2c-mulf-conj)
        (cons 'qcd-mulh-conj                 q2c-mulh-conj)
        (cons 'qcd-muls-conj                 q2c-muls-conj)
+       (cons 'qcd-mul-clover                q2c-mul-clover)
        (cons 'qcd-su-n-mul                  q2c-u-mul)
        (cons 'qcd-su-n-conj-mul             q2c-u-conj-mul)
        (cons 'qcd-su-n-mul-conj             q2c-u-mul-conj)
@@ -1127,6 +1348,12 @@
        (cons 'qcd-fermion-offset            q2c-fermion-offset)
        (cons 'qcd-fermion-double-offset     q2c-fermion-double-offset)
        (cons 'qcd-fermion-float-offset      q2c-fermion-float-offset)
+       (cons 'qcd-clover-lo-offset          q2c-clover-lo-offset)
+       (cons 'qcd-clover-lo-double-offset   q2c-clover-lo-double-offset)
+       (cons 'qcd-clover-lo-float-offset    q2c-clover-lo-float-offset)
+       (cons 'qcd-clover-hi-offset          q2c-clover-hi-offset)
+       (cons 'qcd-clover-hi-double-offset   q2c-clover-hi-double-offset)
+       (cons 'qcd-clover-hi-float-offset    q2c-clover-hi-float-offset)
        (cons 'qcd-staggered-fermion-offset  q2c-staggered-fermion-offset)
        (cons 'qcd-staggered-fermion-double-offset
              q2c-staggered-fermion-double-offset)
