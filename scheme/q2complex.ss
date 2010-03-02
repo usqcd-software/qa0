@@ -989,7 +989,7 @@
                       [(a env) (q2c-rename env a t c f)]
                       [(x env) (q2c-rename env (car output*) t c f)])
           (values (cons (make-qa0-operation attr*
-                          'complex-cmadd
+                          'complex-madd
                           (list (make-reg x))
                           (list (make-reg a) alpha (make-reg s)))
                         r*)
