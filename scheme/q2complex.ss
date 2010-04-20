@@ -1331,12 +1331,117 @@
                     [(null? op*) (c-loop (+ c 1) r* env)]
                     [else (let-values* ([(r* env) (upa c f (car op*) r* env)])
                             (f-loop (+ f 1) (cdr op*) r* env))]))]))))
+    (define (q2c-unproject-5-dot attr* output* input* r* env)
+      (q2c-check-list output* 1 "QCD gamma unproject-5-dot result")
+      (q2c-check-list input* 2 "QCD gamma unproject-5-dot sources")
+      (let* ([kind (attr-lookup attr* 'unproject-5 "qcd-unproject-5-dot")]
+             [op* (ce-lookup env (cons 'unproject-5 kind)
+                             "xxx unproj op-table for ~a" kind)]
+             [dot-r (q2c-new-reg)]
+             [c-n (ce-resolve-const env '*colors* "Color count")]
+             [r-r (car output*)]
+             [r-a (car input*)]
+             [r-b (cadr input*)])
+        (define (upa c f op r* env)
+          (q2c-check-list op 2 "Unprojection operation")
+          (let-values* ([(b env) (q2c-rename env r-b 'fermion c f)]
+                        [opcode (car op)] [(component) (cadr op)]
+                        [(a env) (q2c-rename env r-a 'projected-fermion
+                                             c component)]
+                        [cmd (add-cmd opcode)])
+            (values (cons (make-qa0-operation attr*
+                            cmd
+                            (list (make-reg dot-r))
+                            (list (make-reg dot-r) (make-reg a) (make-reg b)))
+                          r*)
+                    env)))
+        (define (add-cmd name)
+          (case name
+            [(plus-one)   'complex-dot-add]
+            [(minus-one)  'complex-dot-sub]
+            [(plus-i)     'complex-dot-sub-i]
+            [(minus-i)    'complex-dot-add-i]
+            [else (s-error "Unknown unproject operation ~a" name)]))
+        (define (start-op r*)
+          (cons (make-qa0-operation attr*
+                                    'complex-dot-init
+                                    (list (make-reg dot-r))
+                                    '())
+                r*))
+        (define (finish-op r*)
+          (cons (make-qa0-operation attr*
+                                    'complex-dot-fini
+                                    (list r-r)
+                                    (list (make-reg dot-r)))
+                r*))
+        (let c-loop ([c 0] [r* (start-op r*)] [env env])
+          (cond
+           [(= c c-n) (values (finish-op r*) env)]
+           [else (let f-loop ([f 0] [op* op*] [r* r*] [env env])
+                   (cond
+                    [(null? op*) (c-loop (+ c 1) r* env)]
+                    [else (let-values* ([(r* env) (upa c f (car op*) r* env)])
+                            (f-loop (+ f 1) (cdr op*) r* env))]))]))))
+;;---
+    (define (q2c-dot-unproject-5 attr* output* input* r* env)
+      (q2c-check-list output* 1 "QCD gamma dot-unproject-5 result")
+      (q2c-check-list input* 2 "QCD gamma dot-unproject-5 sources")
+      (let* ([kind (attr-lookup attr* 'unproject-5 "qcd-dot-unproject-5")]
+             [op* (ce-lookup env (cons 'unproject-5 kind)
+                             "unproj op-table for ~a" kind)]
+             [c-n (ce-resolve-const env '*colors* "Color count")]
+             [dot-r (q2c-new-reg)]
+             [r-r (car output*)]
+             [r-a (car input*)]
+             [r-b (cadr input*)])
+        (define (upa c f op r* env)
+          (q2c-check-list op 2 "Unprojection operation")
+          (let-values* ([(a env) (q2c-rename env r-a 'fermion c f)]
+                        [opcode (car op)] [(component) (cadr op)]
+                        [(b env) (q2c-rename env r-b 'projected-fermion
+                                             c component)]
+                        [cmd (add-cmd opcode)])
+            (values (cons (make-qa0-operation attr*
+                            cmd
+                            (list (make-reg dot-r))
+                            (list (make-reg dot-r) (make-reg a) (make-reg b)))
+                          r*)
+                    env)))
+        (define (add-cmd name)
+          (case name
+            [(plus-one)   'complex-dot-add]
+            [(minus-one)  'complex-dot-sub]
+            [(plus-i)     'complex-dot-add-i]
+            [(minus-i)    'complex-dot-sub-i]
+            [else (s-error "Unknown unproject operation ~a" name)]))
+        (define (start-op r*)
+          (cons (make-qa0-operation attr*
+                                    'complex-dot-init
+                                    (list (make-reg dot-r))
+                                    '())
+                r*))
+        (define (finish-op r*)
+          (cons (make-qa0-operation attr*
+                                    'complex-dot-fini
+                                    (list r-r)
+                                    (list (make-reg dot-r)))
+                r*))
+        (let c-loop ([c 0] [r* (start-op r*)] [env env])
+          (cond
+           [(= c c-n) (values (finish-op r*) env)]
+           [else (let f-loop ([f 0] [op* op*] [r* r*] [env env])
+                   (cond
+                    [(null? op*) (c-loop (+ c 1) r* env)]
+                    [else (let-values* ([(r* env) (upa c f (car op*) r* env)])
+                            (f-loop (+ f 1) (cdr op*) r* env))]))]))))
     (define q2c-op*
       (list
        (cons 'qcd-project                   q2c-project)
        (cons 'qcd-unproject                 q2c-unproject)
        (cons 'qcd-unproject-add             q2c-unproject-add)
        (cons 'qcd-unproject-sub             q2c-unproject-sub)
+       (cons 'qcd-unproject-5-dot           q2c-unproject-5-dot)
+       (cons 'qcd-dot-unproject-5           q2c-dot-unproject-5)
        (cons 'qcd-mulf                      q2c-mulf)
        (cons 'qcd-mulh                      q2c-mulh)
        (cons 'qcd-muls                      q2c-muls)
