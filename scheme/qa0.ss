@@ -20,7 +20,7 @@
 ;;
 (define qa0-driver
   (let ()
-    (define *version* "Version 1.7.0-rc1 XXX $Id$")
+    (define *version* "Version 1.7.0-rc2 XXX $Id$")
     (define (do-help arg*)
       (for-each (lambda (cdf) (q-print "\t~a\t~a~%" (car cdf) (cadr cdf)))
                 cmd*))
