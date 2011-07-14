@@ -1665,7 +1665,12 @@ void *getnative(obj o, cxtype_t *tp) {
 (define-inline (eof-object? x)
   (%prim "bool(iseof(obj_from_$arg))" x))
 
-
+; system environment
+(define-inline (getenv s)
+  (%prim* "{ /* getenv */
+    char *s = getenv(stringchars(obj_from_$arg));
+    if (s) $return obj(hpushstr($live, newstring(s)));
+    else $return bool(0); }" s))
 
 ; input ports
 
