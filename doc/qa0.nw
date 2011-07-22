@@ -22,7 +22,7 @@
 \title{QA---Register Transfer Language}
 \author{Andrew Pochinsky}
 \catcode`\$=11
-\date{Version 1.4.0 XXX\\$Id$}
+\date{Version 1.8.0 XXX\\$Id$}
 \catcode`\$=3
 
 \newcommand{\any}{${}^{*}$}
@@ -290,7 +290,7 @@ inside the loop is controlled by the attributes. The loop step is alway $1$.
 \nonterminal{exclusive high}\is\nonterminal{input}\\
 \end{grammar}
 
-It is possible to use quare brackets [[[]]] instead if parentheses [[()]] in
+It is possible to use square brackets [[[]]] instead if parentheses [[()]] in
 any place as long as the closing backet matches the open one.
 Also, [[;]] starts a commnet upto the end of line.
 
@@ -307,6 +307,8 @@ The following targets are supported:
 \item[\terminal{xlc/bgl}] IBM's XLC compiler for BG/L with intrinsics.
 \item[\terminal{bgl}] BG/L assembler.
 \end{itemize}
+
+The number of colors is controlled by the shell environment variable \terminal{Nc}, default is 3.
 
 \section{PROCEDURE ATTRIBUTES}
 The following procedure attributes are understood:
