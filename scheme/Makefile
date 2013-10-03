@@ -30,10 +30,12 @@ sources.ss = \
 	q2complex.ss \
 	c2real.ss \
 	cx2dh.ss \
+	cx2qh.ss \
 	cfold.ss \
 	backend.ss \
 	be-ckind.ss \
 	be-bgl-xlc.ss \
+        be-bgq-xlc.ss \
 	be-c99-64.ss \
 	be-c99.ss \
 	be-dry.ss \
@@ -116,6 +118,10 @@ c2real.c:  attr.ss
 cx2dh.c:  common.sf
 cx2dh.c:  error.ss
 cx2dh.c:  ast.ss
+cx2qh.c: sfc.sf
+cx2qh.c: common.sf
+cx2qh.c: error.ss
+cx2qh.c: ast.ss
 cfold.c:  common.sf
 cfold.c:  error.ss
 cfold.c:  basis.ss
@@ -147,6 +153,19 @@ be-bgl-xlc.c:  cenv.ss
 be-bgl-xlc.c:  cheader.ss
 be-bgl-xlc.c:  verbose.ss
 be-bgl-xlc.c:  be-ckind.ss
+be-bgq-xlc.c: sfc.sf
+be-bgq-xlc.c: common.sf
+be-bgq-xlc.c: error.ss
+be-bgq-xlc.c: format.ss
+be-bgq-xlc.c: ast.ss
+be-bgq-xlc.c: parser.ss
+be-bgq-xlc.c: attr.ss
+be-bgq-xlc.c: backend.ss
+be-bgq-xlc.c: cx2qh.ss
+be-bgq-xlc.c: cenv.ss
+be-bgq-xlc.c: cheader.ss
+be-bgq-xlc.c: verbose.ss
+be-bgq-xlc.c: be-ckind.ss
 be-c99-64.c:  common.sf
 be-c99-64.c:  error.ss
 be-c99-64.c:  ast.ss

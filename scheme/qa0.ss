@@ -10,11 +10,13 @@
 #fload "q2complex.ss"
 #fload "c2real.ss"
 #fload "cx2dh.ss"
+#fload "cx2qh.ss"
 #fload "qa0print.ss"
 #fload "be-c99.ss"
 #fload "be-c99-64.ss"
 #fload "be-dry.ss"
 #fload "be-bgl-xlc.ss"
+#fload "be-bgq-xlc.ss"
 ;;
 ;; (provide qa0-driver)
 ;;
@@ -56,6 +58,8 @@
       (la-compilier arg* machine-dry qa0-compile emit-back-end))
     (define (do-bgl/xlc arg*)
       (la-compilier arg* machine-bgl/xlc qa0-compile emit-back-end))
+    (define (do-bgq/xlc arg*)
+      (la-compilier arg* machine-bgq/xlc qa0-compile emit-back-end))
     (define (print-tree/env ast env) (print-tree ast))
     (define (do-version arg*)
       (q-print "qa0: ~a~%" *version*))
@@ -67,6 +71,8 @@
       (la-compilier arg* machine-c99-32 qa0-r-expand print-tree/env))
     (define (do-dhexpand arg*)
       (la-compilier arg* machine-bgl/xlc qa0-dhexpand print-tree/env))
+    (define (do-qhexpand arg*)
+      (la-compilier arg* machine-bgq/xlc qa0-qhexpand print-tree/env))
     (define (qa0-macro name machine d/f back-end)
       (let-values* ([ast (parse-qa0-file name)]
                     [(ast env) (fold-constants/env ast machine d/f)])
@@ -86,6 +92,11 @@
       (qa0-c-expand name machine d/f
                     (lambda (ast env)
                       (let ([ast (complex->double-hummer ast)])
+                        (back-end ast env)))))
+    (define (qa0-qhexpand name machine d/f back-end)
+      (qa0-c-expand name machine d/f
+                    (lambda (ast env)
+                      (let ([ast (complex->quad-hummer ast)])
                         (back-end ast env)))))
     (define (qa0-compile name machine d/f back-end)
       (qa0-c-expand name machine d/f
@@ -110,10 +121,12 @@
        (list "c99"     "d/f out in   same as c99-32"                  do-c99)
        (list "dry"     "d/f out in   build .c file for dry version"   do-dry)
        (list "bgl/xlc" "d/f out in   build .c file for XLC on BG/L"   do-bgl/xlc)
+       (list "bgq/xlc" "d/f out in   build .c file for XLC on BG/Q"   do-bgq/xlc)
        (list "macro"   "d/f out in   do constant folding only"        do-macro)
        (list "complex" "d/f out in   convert to complex only"         do-c-expand)
        (list "real"    "d/f out in   convert to real only"            do-r-expand)
        (list "dhummer" "d/f out in   convert to DH only"              do-dhexpand)
+       (list "qhummer" "d/f out in   convert to QH only"              do-qhexpand)
        (list "version" "             print qa0 version"               do-version)))
     (define (dispatch name arg*)
       (let loop ([cmd* cmd*])
