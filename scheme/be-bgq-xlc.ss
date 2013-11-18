@@ -120,7 +120,7 @@
         (qh-sub                  2 "$0 = vec_sub(%0, %1)"                   2)
         (qh-rmul                 2 "$0 = vec_mul(vec_splats(%0), %1)"      2)
         (qh-rmadd                3 "$0 = vec_xmadd(vec_splats(%1), %2, %0)" 4)
-        (qh-rmsub                3 "$0 = vec_sub(vec_mul(vec_splats(%1),%2),%0)" 4)
+        (qh-rmsub                3 "$0 = vec_sub(%0,vec_mul(vec_splats(%1),%2))" 4)
         (qh-add-i                2 "$0 = vec_xxnpmadd(%1, gONE, %0)"        2)
         (qh-sub-i                2 "$0 = vec_xxcpnmadd(%1, gONE, %0)"       2)
         (qh-mul-a                2 "$0 = vec_xmul(%0, %1)"                  2)
@@ -131,23 +131,23 @@
         (qh-cmul-b               3 "$0 = vec_xxcpnmadd(%2, %1, %0)"         4)
         (qh-cmadd-a              3 "$0 = vec_xmadd(%1, %2, %0)"             4)
         (qh-cmadd-b              3 "$0 = vec_xxcpnmadd(%2, %1, %0)"         4)
-        (qh-cmsub-a              3 "$0 = vec_sub(vec_xmul(%1,%2),%0)"       4)
+        (qh-cmsub-a              3 "$0 = vec_sub(%0,vec_xmul(%1,%2))"       4)
         (qh-cmsub-b              3 "$0 = vec_xxnpmadd(%2, %1, %0)"          4)
         (qh-real-cmul-conj-init  0 "$0 = gZERO"                             0)
-        (qh-real-cmul-conj-add   3 "$0 = vec_madd(%0, %1, %2)"              4)
-        (qh-real-cmul-conj-fini  1 "$0 = (%0)[0]+(%0)[1]" 1)
+        (qh-real-cmul-conj-add   3 "$0 = vec_madd(%2, %1, %0)"              4)
+        (qh-real-cmul-conj-fini  1 "$0 = (%0)[0]+(%0)[1]"                   1)
         (qh-norm-init            0 "$0 = gZERO"                             0)
-        (qh-norm-add             2 "$0 = vec_madd(%0, %1, %1)"              4)
-        (qh-norm-fini            1 "$0 = (%0)[0]+(%0)[1]" 1)
+        (qh-norm-add             2 "$0 = vec_madd(%1, %1, %0)"              4)
+        (qh-norm-fini            1 "$0 = (%0)[0]+(%0)[1]"                   1)
         (qh-dot-init             0 "$0 = gZERO"                             0)
         (qh-dot-add-a            3 "$0 = vec_xmadd(%1, %2, %0)"             4)
         (qh-dot-add-b            3 "$0 = vec_xxcpnmadd(%2, %1, %0)"         4)
-        (qh-dot-add-i-a          3 "$0 = vec_xxnpmadd(%2, %1, %0)"          4)
-        (qh-dot-add-i-b          3 "$0 = vec_xmadd(%1, %2, %0)"             4)
-        (qh-dot-sub-a            3 "$0 = vec_sub(vec_xmul(%1,%2),%0)"       4)
+        (qh-dot-add-i-a          3 "$0 = vec_xxnpmadd(vec_xmul(%1, %2), gONE, %0)" 4)
+        (qh-dot-add-i-b          3 "$0 = vec_xxmadd(vec_xxmadd(%2, %1, gZERO), gONE, %0)" 4)
+        (qh-dot-sub-a            3 "$0 = vec_sub(%0,vec_xmul(%1,%2))"       4)
         (qh-dot-sub-b            3 "$0 = vec_xxnpmadd(%2, %1, %0)"          4)
-        (qh-dot-sub-i-a          3 "$0 = vec_xxcpnmadd(%2, %1, %0)"         4)
-        (qh-dot-sub-i-b          3 "$0 = vec_sub(%0,vec_xxmadd(%2,%1,gZERO))"  4)
+        (qh-dot-sub-i-a          3 "$0 = vec_xxcpnmadd(vec_xmul(%1, %2), gONE, %0)" 4)
+        (qh-dot-sub-i-b          3 "$0 = vec_sub(%0,vec_xxmadd(vec_xxmadd(%2, %1, gZERO), gONE, gZERO))" 4)
         (qh-dot-fini             1 "$0 = %0"                                0)
         (qh->float               1 "$0 = vec_rsp(%0)"                       0)))
     (define load-table
@@ -163,12 +163,18 @@
         qh-times-minus-i
         qh-real-cmul-conj-init
         qh-norm-init
-        qh-dot-init))
+        qh-dot-init
+	qh-dot-add-i-b
+	qh-dot-sub-i-b))
     (define op-needing-one*
       '(qh-times-plus-i
         qh-times-minus-i
         qh-add-i
-        qh-sub-i))
+        qh-sub-i
+	qh-dot-add-i-a
+	qh-dot-add-i-b
+	qh-dot-sub-i-a
+	qh-dot-sub-i-b))
     (define (emit-qh-double-store level addr* value env)
       (do-emit level (q-fmt "vec_st2a(~a, 0, (double *)(~a));"
                             (preemit-input value env)
@@ -250,8 +256,8 @@
     (define (bgq/xlc-back-end ast env)
       (values (complex->quad-hummer ast) env))
     (define (extra-env env)
-      (let* ([env (ce-add-type env 'qh-double   "vector4double" 16 16)]
-             [env (ce-add-type env 'qh-float    "vector4double" 16 16)])
+      (let* ([env (ce-add-type env 'qh-double   "vector4double" 32 32)]
+             [env (ce-add-type env 'qh-float    "vector4double" 32 32)])
         env))
     (define (extra-decl* arg-name* arg-type* arg-c-name* arg-c-type* env)
       (define (do-constant id init)

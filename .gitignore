@@ -2,3 +2,4 @@ scheme/*.c
 bootstrap/*.c
 bootstrap/*.o
 bootstrap/qa0
+doc/*.pdf
