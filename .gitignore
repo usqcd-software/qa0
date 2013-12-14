@@ -3,3 +3,8 @@ bootstrap/*.c
 bootstrap/*.o
 bootstrap/qa0
 doc/*.pdf
+doc/*.aux
+doc/*.dvi
+doc/*.log
+doc/*.out
+doc/qa0.tex
