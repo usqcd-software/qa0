@@ -22,7 +22,7 @@
 ;;
 (define qa0-driver
   (let ()
-    (define *version* "Version working 20131213 /w bgq")
+    (define *version* "Version 1.10.0")
     (define (do-help arg*)
       (for-each (lambda (cdf) (q-print "\t~a\t~a~%" (car cdf) (cadr cdf)))
                 cmd*))
