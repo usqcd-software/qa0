@@ -164,17 +164,17 @@
         qh-real-cmul-conj-init
         qh-norm-init
         qh-dot-init
-	qh-dot-add-i-b
-	qh-dot-sub-i-b))
+        qh-dot-add-i-b
+        qh-dot-sub-i-b))
     (define op-needing-one*
       '(qh-times-plus-i
         qh-times-minus-i
         qh-add-i
         qh-sub-i
-	qh-dot-add-i-a
-	qh-dot-add-i-b
-	qh-dot-sub-i-a
-	qh-dot-sub-i-b))
+        qh-dot-add-i-a
+        qh-dot-add-i-b
+        qh-dot-sub-i-a
+        qh-dot-sub-i-b))
     (define (emit-qh-double-store level addr* value env)
       (do-emit level (q-fmt "vec_st2a(~a, 0, (double *)(~a));"
                             (preemit-input value env)

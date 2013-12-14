@@ -80,11 +80,13 @@
         [infix  (ce-lookup env 'proc-infix "missing proc-infix in CE")]
         [suffix (ce-lookup env 'proc-suffix "missing proc-suffix in CE")]
         [stem*  (attr-lookup attr* 'stem "missing stem for ~a" name)]
+        [has-c?  (attr-search attr* 'color (lambda (v*) #t) (lambda () #f))]
         [has-df? (attr-search attr* 'prec&color
                               (lambda (v*) #t) (lambda () #f))])
-    (let loop ([r (if has-df?
-                      (q-fmt "~a~a~a_~a_" prefix prec colors infix)
-                      (q-fmt "~a~a_" prefix infix))]
+    (let loop ([r (cond
+                   [has-df? (q-fmt "~a~a~a_~a_" prefix prec colors infix)]
+                   [has-c?  (q-fmt "~a~a_~a_" prefix colors infix)]
+                   [else    (q-fmt "~a~a_" prefix infix)])]
                [stem* stem*])
       (cond
        [(null? stem*) (q-fmt "~a~a" r suffix)]
