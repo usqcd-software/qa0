@@ -36,10 +36,10 @@
          [env (ce-add-type env 'vector-double  "vector double"   16 16)]
          [env (ce-add-type env 'complex-float  "float _Complex"   8  8)]
          [env (ce-add-type env 'complex-double "double _Complex" 16 16)]
-         [env (ce-add-const env '*colors*            (string->number (or (getenv "Nc") "3")))]
+         [Nc (string->number (or (getenv "Nc") "3"))]
+         [env (ce-add-const env '*colors*            Nc)]
          [env (ce-add-const env '*dim*               4)]
-         ;; *clovers* = (* *projected-fermion-dim* *colors*)
-         [env (ce-add-const env '*clovers*           6)]
+         [env (ce-add-const env '*clovers*           (* 2 Nc))]
          [env (ce-add-const env '*fermion-dim*       4)]
          [env (ce-add-const env '*projected-fermion-dim*  2)])
     (let loop ([env env] [op* op*])
