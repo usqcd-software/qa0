@@ -36,7 +36,7 @@
          [env (ce-add-type env 'vector-double  "vector double"   16 16)]
          [env (ce-add-type env 'complex-float  "float _Complex"   8  8)]
          [env (ce-add-type env 'complex-double "double _Complex" 16 16)]
-         [Nc (string->number (or (getenv "Nc") "3"))]
+         [Nc (or (string->number (or (getenv "Nc") "3")) 3)]
          [env (ce-add-const env '*colors*            Nc)]
          [env (ce-add-const env '*dim*               4)]
          [env (ce-add-const env '*clovers*           (* 2 Nc))]
