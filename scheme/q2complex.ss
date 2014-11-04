@@ -717,23 +717,61 @@
       (q2c-zerox attr* output* input* 1
                  'all 'staggered-fermion r* env))
     (define (q2c-scaleu attr* output* input* r* env)
-      (q2c-scalex attr* output* input* '*colors*
+      (q2c-scalex 'complex-rmul attr* output* input* '*colors*
                   'all 'gauge r* env))
     (define (q2c-scalef attr* output* input* r* env)
-      (q2c-scalex attr* output* input* '*fermion-dim*
+      (q2c-scalex 'complex-rmul attr* output* input* '*fermion-dim*
                   'all 'fermion r* env))
     (define (q2c-scalef-lo attr* output* input* r* env)
-      (q2c-scalex attr* output* input* '*fermion-dim*
+      (q2c-scalex 'complex-rmul attr* output* input* '*fermion-dim*
                   'low 'fermion r* env))
     (define (q2c-scalef-hi attr* output* input* r* env)
-      (q2c-scalex attr* output* input* '*fermion-dim*
+      (q2c-scalex 'complex-rmul attr* output* input* '*fermion-dim*
                   'high 'fermion r* env))
     (define (q2c-scaleh attr* output* input* r* env)
-      (q2c-scalex attr* output* input* '*projected-fermion-dim*
+      (q2c-scalex 'complex-rmul attr* output* input* '*projected-fermion-dim*
                   'all 'projected-fermion r* env))
     (define (q2c-scales attr* output* input* r* env)
-      (q2c-scalex attr* output* input* 1
+      (q2c-scalex 'complex-rmul attr* output* input* 1
                   'all 'staggered-fermion r* env))
+;; XXXX
+    (define (q2c-complex-scaleu attr* output* input* r* env)
+      (q2c-scalex 'complex-mul attr* output* input* '*colors*
+                  'all 'gauge r* env))
+    (define (q2c-complex-scalef attr* output* input* r* env)
+      (q2c-scalex 'complex-mul attr* output* input* '*fermion-dim*
+                  'all 'fermion r* env))
+    (define (q2c-complex-scalef-lo attr* output* input* r* env)
+      (q2c-scalex 'complex-mul attr* output* input* '*fermion-dim*
+                  'low 'fermion r* env))
+    (define (q2c-complex-scalef-hi attr* output* input* r* env)
+      (q2c-scalex 'complex-mul attr* output* input* '*fermion-dim*
+                  'high 'fermion r* env))
+    (define (q2c-complex-scaleh attr* output* input* r* env)
+      (q2c-scalex 'complex-mul attr* output* input* '*projected-fermion-dim*
+                  'all 'projected-fermion r* env))
+    (define (q2c-complex-scales attr* output* input* r* env)
+      (q2c-scalex 'complex-mul attr* output* input* 1
+                  'all 'staggered-fermion r* env))
+    (define (q2c-complex-conj-scaleu attr* output* input* r* env)
+      (q2c-scalex 'complex-cmul attr* output* input* '*colors*
+                  'all 'gauge r* env))
+    (define (q2c-complex-conj-scalef attr* output* input* r* env)
+      (q2c-scalex 'complex-cmul attr* output* input* '*fermion-dim*
+                  'all 'fermion r* env))
+    (define (q2c-complex-conj-scalef-lo attr* output* input* r* env)
+      (q2c-scalex 'complex-cmul attr* output* input* '*fermion-dim*
+                  'low 'fermion r* env))
+    (define (q2c-complex-conj-scalef-hi attr* output* input* r* env)
+      (q2c-scalex 'complex-cmul attr* output* input* '*fermion-dim*
+                  'high 'fermion r* env))
+    (define (q2c-complex-conj-scaleh attr* output* input* r* env)
+      (q2c-scalex 'complex-cmul attr* output* input* '*projected-fermion-dim*
+                  'all 'projected-fermion r* env))
+    (define (q2c-complex-conj-scales attr* output* input* r* env)
+      (q2c-scalex 'complex-cmul attr* output* input* 1
+                  'all 'staggered-fermion r* env))
+;; XXXX
     (define (q2c-fnorm-init attr* output* input* r* env)
       (q2c-check-list output* 1 "QCD fermion norm init outputs")
       (q2c-check-list input* 0 "QCD fermion norm init inputs")
@@ -892,13 +930,13 @@
                     [(= f f-hi) (c-loop (+ c 1) r* env)]
                     [else (let-values* ([(r* env) (complex-zero c f r* env)])
                             (f-loop (+ f 1) r* env))]))]))))
-    (define (q2c-scalex attr* output* input* f-n part t r* env)
+    (define (q2c-scalex op attr* output* input* f-n part t r* env)
       (define (complex-scale c f r* env)
         (let-values* ([a (car input*)]
                       [(b env) (q2c-rename env (cadr input*) t c f)]
                       [(r env) (q2c-rename env (car output*) t c f)])
           (values (cons (make-qa0-operation attr*
-                          'complex-rmul
+                          op
                           (list (make-reg r))
                           (list a (make-reg b)))
                         r*)
@@ -1465,6 +1503,18 @@
        (cons 'qcd-scalef-hi                 q2c-scalef-hi)
        (cons 'qcd-scaleh                    q2c-scaleh)
        (cons 'qcd-scales                    q2c-scales)
+       (cons 'qcd-complex-scaleu            q2c-complex-scaleu)
+       (cons 'qcd-complex-scalef            q2c-complex-scalef)
+       (cons 'qcd-complex-scalef-lo         q2c-complex-scalef-lo)
+       (cons 'qcd-complex-scalef-hi         q2c-complex-scalef-hi)
+       (cons 'qcd-complex-scaleh            q2c-complex-scaleh)
+       (cons 'qcd-complex-scales            q2c-complex-scales)
+       (cons 'qcd-complex-conj-scaleu       q2c-complex-conj-scaleu)
+       (cons 'qcd-complex-conj-scalef       q2c-complex-conj-scalef)
+       (cons 'qcd-complex-conj-scalef-lo    q2c-complex-conj-scalef-lo)
+       (cons 'qcd-complex-conj-scalef-hi    q2c-complex-conj-scalef-hi)
+       (cons 'qcd-complex-conj-scaleh       q2c-complex-conj-scaleh)
+       (cons 'qcd-complex-conj-scales       q2c-complex-conj-scales)
        (cons 'qcd-addu                      q2c-addu)
        (cons 'qcd-addf                      q2c-addf)
        (cons 'qcd-addh                      q2c-addh)
