@@ -734,7 +734,6 @@
     (define (q2c-scales attr* output* input* r* env)
       (q2c-scalex 'complex-rmul attr* output* input* 1
                   'all 'staggered-fermion r* env))
-;; XXXX
     (define (q2c-complex-scaleu attr* output* input* r* env)
       (q2c-scalex 'complex-mul attr* output* input* '*colors*
                   'all 'gauge r* env))
@@ -771,7 +770,6 @@
     (define (q2c-complex-conj-scales attr* output* input* r* env)
       (q2c-scalex 'complex-cmul attr* output* input* 1
                   'all 'staggered-fermion r* env))
-;; XXXX
     (define (q2c-fnorm-init attr* output* input* r* env)
       (q2c-check-list output* 1 "QCD fermion norm init outputs")
       (q2c-check-list input* 0 "QCD fermion norm init inputs")

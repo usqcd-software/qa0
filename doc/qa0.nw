@@ -21,9 +21,7 @@
 
 \title{QA---Register Transfer Language}
 \author{Andrew Pochinsky}
-\catcode`\$=11
-\date{Version 1.8.0 XXX\\$Id$}
-\catcode`\$=3
+\date{Version 1.11.00}
 
 \newcommand{\any}{${}^{*}$}
 \newcommand{\oneplus}{${}^{+}$}
