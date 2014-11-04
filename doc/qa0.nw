@@ -658,6 +658,24 @@ Compute $r\leftarrow v x$ for a fermion.
 
 
 \begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-scalef-hi} \terminal{()}
+   \terminal{(} $r_F$ \terminal{)}
+   \terminal{(} $v_d$ $x_F$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v x$ for the upper half of a fermion.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-scalef-lo} \terminal{()}
+   \terminal{(} $r_F$ \terminal{)}
+   \terminal{(} $v_d$ $x_F$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v x$ for the lower half of a fermion.
+
+
+\begin{grammar}
 \terminal{(}\terminal{op} \terminal{qcd-scaleh} \terminal{()}
    \terminal{(} $r_H$ \terminal{)}
    \terminal{(} $v_d$ $x_H$ \terminal{)}
@@ -672,6 +690,112 @@ Compute $r\leftarrow v x$ for a projected fermion.
 \terminal{)}
 \end{grammar}
 Compute $r\leftarrow v x$ for a staggered fermion.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-complex-scaleu} \terminal{()}
+   \terminal{(} $r_G$ \terminal{)}
+   \terminal{(} $v_c$ $x_G$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v x$ for a gauge matrix.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-complex-scalef} \terminal{()}
+   \terminal{(} $r_F$ \terminal{)}
+   \terminal{(} $v_c$ $x_F$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v x$ for a fermion.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-complex-scalef-hi} \terminal{()}
+   \terminal{(} $r_F$ \terminal{)}
+   \terminal{(} $v_c$ $x_F$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v x$ for the upper half of a fermion.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-complex-scalef-lo} \terminal{()}
+   \terminal{(} $r_F$ \terminal{)}
+   \terminal{(} $v_c$ $x_F$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v x$ for the lower half of a fermion.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-complex-scaleh} \terminal{()}
+   \terminal{(} $r_H$ \terminal{)}
+   \terminal{(} $v_c$ $x_H$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v x$ for a projected fermion.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-complex-scales} \terminal{()}
+   \terminal{(} $r_S$ \terminal{)}
+   \terminal{(} $v_c$ $x_S$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v x$ for a staggered fermion.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-complex-conj-scaleu} \terminal{()}
+   \terminal{(} $r_G$ \terminal{)}
+   \terminal{(} $v_c$ $x_G$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v^\dagger x$ for a gauge matrix.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-complex-conj-scalef} \terminal{()}
+   \terminal{(} $r_F$ \terminal{)}
+   \terminal{(} $v_c$ $x_F$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v^\dagger x$ for a fermion.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-complex-conj-scalef-hi} \terminal{()}
+   \terminal{(} $r_F$ \terminal{)}
+   \terminal{(} $v_c$ $x_F$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v^\dagger x$ for the upper half of a fermion.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-complex-conj-scalef-lo} \terminal{()}
+   \terminal{(} $r_F$ \terminal{)}
+   \terminal{(} $v_c$ $x_F$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v^\dagger x$ for the lower half of a fermion.
+
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-complex-conj-scaleh} \terminal{()}
+   \terminal{(} $r_H$ \terminal{)}
+   \terminal{(} $v_c$ $x_H$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v^\dagger x$ for a projected fermion.
+
+\begin{grammar}
+\terminal{(}\terminal{op} \terminal{qcd-complex-conj-scales} \terminal{()}
+   \terminal{(} $r_S$ \terminal{)}
+   \terminal{(} $v_c$ $x_S$ \terminal{)}
+\terminal{)}
+\end{grammar}
+Compute $r\leftarrow v^\dagger x$ for a staggered fermion.
+
 
 \begin{grammar}
 \terminal{(}\terminal{op} \terminal{qcd-addu} \terminal{()}
