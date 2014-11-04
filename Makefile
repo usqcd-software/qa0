@@ -12,7 +12,7 @@ DOCS    =  doc/qa0.pdf README COPYRIGHT AUTHORS
 .PHONY: all dist clean realclean install install-doc tar
 
 all:
-	$(MAKE) -C bootstrap $@
+	$(MAKE) CC='$(CC)'  -C bootstrap $@
 
 clean realclean:
 	for d in $(SUBDIRS); do \
