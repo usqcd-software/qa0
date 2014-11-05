@@ -50,6 +50,8 @@
         (qh-mul-b                  qh-double)
         (qh-madd-a                 qh-double)
         (qh-madd-b                 qh-double)
+        (qh-msub-a                 qh-double)
+        (qh-msub-b                 qh-double)
         (qh-cmul-a                 qh-double)
         (qh-c2mul-b                qh-double)
         (qh-c2mul-a                qh-double)
@@ -127,6 +129,8 @@
         (qh-mul-b                3 "$0 = vec_xxnpmadd(%2, %1, %0)"          4)
         (qh-madd-a               3 "$0 = vec_xmadd(%1, %2, %0)"             4)
         (qh-madd-b               3 "$0 = vec_xxnpmadd(%2, %1, %0)"          4)
+        (qh-msub-a               3 "$0 = ?? vec_xmadd(%1, %2, %0)"             4) ;; XXX
+        (qh-msub-b               3 "$0 = ?? vec_xxnpmadd(%2, %1, %0)"          4) ;; XXX
         (qh-cmul-a               2 "$0 = vec_xmul(%0, %1)"                  2)
         (qh-cmul-b               3 "$0 = vec_xxcpnmadd(%2, %1, %0)"         4)
         (qh-cmadd-a              3 "$0 = vec_xmadd(%1, %2, %0)"             4)

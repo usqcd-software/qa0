@@ -1,4 +1,4 @@
-;; BG/L & BG/P XLC backend
+;; BG/L & BG/P XLC backend XXX: are these machines still alive?
 #fload "sfc.sf"
 #fload "common.sf"
 #fload "error.ss"
@@ -50,6 +50,8 @@
         (dh-mul-b                  dh-double)
         (dh-madd-a                 dh-double)
         (dh-madd-b                 dh-double)
+        (dh-msub-a                 dh-double)
+        (dh-msub-b                 dh-double)
         (dh-cmul-a                 dh-double)
         (dh-c2mul-b                dh-double)
         (dh-c2mul-a                dh-double)
@@ -127,6 +129,8 @@
         (dh-mul-b                3 "$0 = __fxcxnpma(%0, %2, __cimag(%1))"   4)
         (dh-madd-a               3 "$0 = __fxcpmadd(%0, %2, __creal(%1))"   4)
         (dh-madd-b               3 "$0 = __fxcxnpma(%0, %2, __cimag(%1))"   4)
+        (dh-msub-a               3 "$0 = ??? __fxcpmsub(%0, %2, __creal(%1))"   4) ;; XXX needs fixing
+        (dh-msub-b               3 "$0 = ??? __fxcxnpms(%0, %2, __cimag(%1))"   4) ;; XXX needs fixing
         (dh-cmul-a               2 "$0 = __fxpmul(%1, __creal(%0))"         2)
         (dh-cmul-b               3 "$0 = __fxcxnsma(%0, %2, __cimag(%1))"   4)
         (dh-cmadd-a              3 "$0 = __fxcpmadd(%0, %2, __creal(%1))"   4)

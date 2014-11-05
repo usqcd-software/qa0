@@ -704,6 +704,15 @@
     (define (q2c-msubs attr* output* input* r* env)
       (q2c-msubx attr* output* input* 1
                  'all 'staggered-fermion r* env))
+    (define (q2c-cmsubf attr* output* input* r* env)
+      (q2c-cmsubx attr* output* input* '*fermion-dim*
+                  'all 'fermion r* env))
+    (define (q2c-cmsubf-lo attr* output* input* r* env)
+      (q2c-cmsubx attr* output* input* '*fermion-dim*
+                  'low 'fermion r* env))
+    (define (q2c-cmsubf-hi attr* output* input* r* env)
+      (q2c-cmsubx attr* output* input* '*fermion-dim*
+                  'high 'fermion r* env))
     (define (q2c-zerou attr* output* input* r* env)
       (q2c-zerox attr* output* input* '*colors*
                  'all 'gauge r* env))
@@ -1105,6 +1114,35 @@
                     [(= f f-hi) (c-loop (+ c 1) r* env)]
                     [else (let-values*
                               ([(r* env) (complex-msub c f s alpha a r* env)])
+                            (f-loop (+ f 1) r* env))]))]))))
+    (define (q2c-cmsubx attr* output* input* f-n part t r* env)
+      (define (complex-cmsub c f s alpha a r* env)
+        (let-values* ([(s env) (q2c-rename env s t c f)]
+                      [(a env) (q2c-rename env a t c f)]
+                      [(x env) (q2c-rename env (car output*) t c f)])
+          (values (cons (make-qa0-operation attr*
+                          'complex-msub
+                          (list (make-reg x))
+                          (list (make-reg a) alpha (make-reg s)))
+                        r*)
+                  env)))
+      (q2c-check-list output* 1 "QCD cmsub outputs")
+      (q2c-check-list input* 3 "QCD cmsub inputs")
+      (let* ([c-n (ce-resolve-const env '*colors* "Color count")]
+             [f-n (ce-resolve-const env f-n "Field dimension")]
+             [f-lo (if (eq? part 'high) (/ f-n 2) 0)]
+             [f-hi (if (eq? part 'low) (/ f-n 2) f-n)]
+             [a  (car input*)]
+             [alpha (cadr input*)]
+             [s (caddr input*)])
+        (let c-loop ([c 0] [r* r*] [env env])
+          (cond
+           [(= c c-n) (values r* env)]
+           [else (let f-loop ([f f-lo] [r* r*] [env env])
+                   (cond
+                    [(= f f-hi) (c-loop (+ c 1) r* env)]
+                    [else (let-values*
+                              ([(r* env) (complex-cmsub c f s alpha a r* env)])
                             (f-loop (+ f 1) r* env))]))]))))
     (define (q2c-mul-g attr* output* input* f-n
                        r-get op-0 op-k u-get f-get r* env)
@@ -1537,7 +1575,10 @@
        (cons 'qcd-msubf-hi                  q2c-msubf-hi)
        (cons 'qcd-msubh                     q2c-msubh)
        (cons 'qcd-msubs                     q2c-msubs)
-       (cons 'qcd-msub-lohi                 q2c-msub-lohi)
+       (cons 'qcd-msubf                     q2c-msubf)
+       (cons 'qcd-cmsubf                    q2c-cmsubf)
+       (cons 'qcd-cmsubf-lo                 q2c-cmsubf-lo)
+       (cons 'qcd-cmsubf-hi                 q2c-cmsubf-hi)
        (cons 'qcd-fnorm-init                q2c-fnorm-init)
        (cons 'qcd-fnorm-add                 q2c-fnorm-add)
        (cons 'qcd-fnorm-lo-add              q2c-fnorm-lo-add)
