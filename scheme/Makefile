@@ -20,6 +20,7 @@ sources.ss = \
         read.ss \
         format.ss \
 	ast.ss \
+        split.ss \
 	attr.ss \
 	basis.ss \
 	cenv.ss \
@@ -197,3 +198,6 @@ main-sfc.c:  common.sf
 main-sfc.c:  qa0.ss
 fmap.c: common.sf
 fmap.c: error.ss
+split.c: common.sf
+split.c: error.ss
+split.c: ast.ss

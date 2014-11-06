@@ -8,6 +8,7 @@ sources =  \
         read.c \
         format.c \
 	ast.c \
+        split.c \
 	attr.c \
 	basis.c \
 	cenv.c \
