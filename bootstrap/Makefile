@@ -17,12 +17,10 @@ sources =  \
 	cheader.c \
 	q2complex.c \
 	c2real.c \
-	cx2dh.c \
 	cx2qh.c \
 	cfold.c \
 	backend.c \
 	be-ckind.c \
-	be-bgl-xlc.c \
 	be-bgq-xlc.c \
 	be-c99-64.c \
 	be-c99.c \
