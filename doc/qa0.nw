@@ -1388,6 +1388,15 @@ Prepare to compute complex dot product squared.
 Add an element to the complex dot product $r\leftarrow a + b^{*}c$.
 
 \begin{grammar}
+\terminal{(}\terminal{op} \terminal{complex-dot-add}
+   \terminal{()}
+   \terminal{(} $r_x$ \terminal{)}
+   \terminal{(} $a_x$ $b_c$ $c_c$\terminal{)}
+\terminal{)}
+\end{grammar}
+Subtract an element from the complex dot product $r\leftarrow a - b^{*}c$.
+
+\begin{grammar}
 \terminal{(}\terminal{op} \terminal{complex-dot-fini}
      \terminal{()}
    \terminal{(} $r_c$ \terminal{)}

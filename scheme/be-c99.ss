@@ -127,9 +127,9 @@
        (complex-norm-fini       1 "$0 = %0"                                0)
        (complex-dot-init        0 "$0 = 0.0"                               0)
        (complex-dot-add         3 "$0 = %0 + conj(%1) * (%2)"              8)
-       (complex-dot-add-i       3 "$0 = %0 + I * conj(%1) * (%2)"          8)
+;;       (complex-dot-add-i       3 "$0 = %0 + I * conj(%1) * (%2)"          8)
        (complex-dot-sub         3 "$0 = %0 - conj(%1) * (%2)"              8)
-       (complex-dot-sub-i       3 "$0 = %0 - I * conj(%1) * (%2)"          8)
+;;       (complex-dot-sub-i       3 "$0 = %0 - I * conj(%1) * (%2)"          8)
        (complex-dot-fini        1 "$0 = (%0)"                              0)))
    (define load-table
      '((int               int)
