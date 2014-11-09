@@ -5,6 +5,7 @@
 (load "read.ss")
 (load "format.ss")
 (load "ast.ss")
+(load "split.ss")
 (load "attr.ss")
 (load "basis.ss")
 (load "fmap.ss")

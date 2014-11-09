@@ -736,8 +736,8 @@
        (cons 'complex-dot-init               c2r-complex-dot-init)
        (cons 'complex-dot-add                c2r-complex-dot-add)
        (cons 'complex-dot-sub                c2r-complex-dot-sub)
-;;       (cons 'complex-dot-add-i              c2r-complex-dot-add-i)
-;;       (cons 'complex-dot-sub-i              c2r-complex-dot-sub-i)
+       (cons 'complex-dot-add-i              c2r-complex-dot-add-i)
+       (cons 'complex-dot-sub-i              c2r-complex-dot-sub-i)
        (cons 'complex-dot-fini               c2r-complex-dot-fini)))
     (define (c2r-operation c attr* name output* input* r* env)
       (cond

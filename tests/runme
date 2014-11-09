@@ -1,6 +1,6 @@
 #!/bin/sh -fe
 qa0=../bootstrap/qa0
-archs='header cee-32 cee-64 c99-32 c99-64 dry bgl/xlc bgq/xlc'
+archs='header cee-32 cee-64 c99-32 c99-64 dry bgq/xlc'
 
 
 for arch in $archs; do

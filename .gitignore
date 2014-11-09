@@ -8,3 +8,4 @@ doc/*.dvi
 doc/*.log
 doc/*.out
 doc/qa0.tex
+tests/x.c
