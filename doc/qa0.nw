@@ -21,7 +21,7 @@
 
 \title{QA---Register Transfer Language}
 \author{Andrew Pochinsky}
-\date{Version XXX}
+\date{Version 1.12.00}
 
 \newcommand{\any}{${}^{*}$}
 \newcommand{\oneplus}{${}^{+}$}
